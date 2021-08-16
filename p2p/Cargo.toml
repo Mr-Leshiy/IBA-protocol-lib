@@ -1,13 +1,9 @@
 [package]
-name = "iba-lib"
+name = "p2p"
 version = "0.1.0"
 edition = "2018"
-
-[workspace]
-members = [
-    "p2p"
-]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bytes = { version = "1.0.1" }
