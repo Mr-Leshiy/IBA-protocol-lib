@@ -5,7 +5,7 @@ edition = "2018"
 
 [workspace]
 members = [
-    "p2p"
+    "network"
 ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
