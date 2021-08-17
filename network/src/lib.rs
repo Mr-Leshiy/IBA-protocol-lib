@@ -1,5 +1,4 @@
-#[cfg(test)]
-mod mock;
+
 #[cfg(test)]
 mod test;
 
