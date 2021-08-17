@@ -6,4 +6,4 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bytes = { version = "1.0.1" }
+libp2p = { version = "0.39.1", default-features = false, features = ["identify", "floodsub", "tcp-async-io", ]}

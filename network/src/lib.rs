@@ -1,41 +1,42 @@
 #[cfg(test)]
 mod test;
 
-pub trait PeerTrait {
-    fn send_msg(&mut self, msg: Vec<u8>);
+use libp2p::{
+    floodsub::{Floodsub, FloodsubEvent, self},
+    identity,
+    swarm::NetworkBehaviourEventProcess,
+    tcp, NetworkBehaviour, PeerId,
+};
 
-    fn receive_msg(&self) -> Vec<u8>;
+#[derive(NetworkBehaviour)]
+pub struct NetworkService {
+    floodsub: Floodsub,
 }
 
-pub trait NetworkServiceTrait<PeerT>
-where
-    PeerT: PeerTrait,
-{
-    fn get_peers(&self) -> Vec<PeerT>;
-
-    fn broadcast_msg(&mut self, msg: Vec<u8>);
-
-    fn receive_msg(&self) -> (PeerT, Vec<u8>);
-
-    fn disconnect_peer(&mut self, peer: PeerT);
-
-    fn add_peer(&mut self, peer: PeerT);
+impl NetworkBehaviourEventProcess<FloodsubEvent> for NetworkService {
+    fn inject_event(&mut self, event: FloodsubEvent) {
+        if let FloodsubEvent::Message(_) = event {
+            // process from the peer
+        }
+    }
 }
 
-pub struct NetworkService<PeerT>
-where
-    PeerT: PeerTrait,
-{
-    peers: Vec<PeerT>,
-}
+impl NetworkService {
+    fn new(topic_name: String) -> Self {
+        let local_key = identity::Keypair::generate_ed25519();
+        let peer_id = PeerId::from_public_key(local_key.public());
+        println!("Local peer id: {:?}", peer_id);
 
-impl<PeerT> NetworkService<PeerT>
-where
-    PeerT: PeerTrait,
-{
-    pub fn broadcast_msg(&mut self, msg: Vec<u8>) {
-        self.peers
-            .iter_mut()
-            .for_each(|peer| peer.send_msg(msg.clone()));
+        let transport = {
+            // create a simple TCP transport
+            let tcp = tcp::TcpConfig::new();
+            tcp
+        };
+
+        let floodsub_topic = floodsub::Topic::new(topic_name);
+
+        Self {
+            floodsub: Floodsub::new(peer_id),
+        }
     }
 }
