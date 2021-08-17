@@ -1,46 +1,35 @@
 use crate::*;
-use bytes::Bytes;
-#[derive(Clone)]
-pub struct TestMsg {
-    pub data: &'static str,
-}
-
-impl Msg for TestMsg {
-    fn data(&self) -> Bytes {
-        self.data.into()
-    }
-}
 
 pub struct TestPeer {
-    pub received_msg: TestMsg,
-    pub send_msg: TestMsg,
+    pub received_msg: Vec<u8>,
+    pub send_msg: Vec<u8>,
 }
 
-impl Peer<TestMsg> for TestPeer {
-    fn send_msg(&mut self, msg: TestMsg) {
+impl PeerTrait for TestPeer {
+    fn send_msg(&mut self, msg: Vec<u8>) {
         self.send_msg = msg;
     }
 
-    fn receive_msg(&mut self) -> TestMsg {
+    fn receive_msg(&self) -> Vec<u8> {
         self.received_msg.clone()
     }
 }
 
-
 #[test]
 fn peers_simple_test() {
     let mut peer = TestPeer {
-        send_msg: TestMsg { data: "" },
-        received_msg: TestMsg { data: "" },
+        send_msg:  "".into(),
+        received_msg: "".into(),
     };
 
-    peer.send_msg(TestMsg {
-        data: "Hello, how are you",
-    });
+    let msg1 = Vec::from("Hello, how are you");
+    let msg2 = Vec::from("I am fine, thank you");
 
-    assert_eq!(peer.send_msg.data, "Hello, how are you");
+    peer.send_msg(msg1.clone());
 
-    peer.received_msg = TestMsg { data: "I am fine" };
+    assert_eq!(peer.send_msg, msg1);
 
-    assert_eq!(peer.receive_msg().data, "I am fine");
+    peer.received_msg = msg2.clone();
+
+    assert_eq!(peer.receive_msg(), msg2)
 }
