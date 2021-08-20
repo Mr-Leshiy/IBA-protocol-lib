@@ -1,16 +1,19 @@
-use std::io::{self};
+use std::io::{stdin, BufRead};
 
-fn main() {
-    let mut service = network::NetworkService::new("chat".into(), |data| {
+#[tokio::main]
+async fn main() {
+    let (mut service, mut worker) = network::build_network("chat".into(), |data| {
         println!("Received: '{:?}'", String::from_utf8_lossy(&data));
     })
     .unwrap();
 
-        network::NetworkService::run(&mut service);
+    tokio::spawn(async move {
+        worker.run().await;
+    });
 
     loop {
         let mut line = String::new();
-        io::stdin().read_line(&mut line).unwrap();
-        service.broadcast_msg(line);
+        stdin().lock().read_line(&mut line).unwrap();
+        service.broadcast_msg(line.into()).await.unwrap();
     }
 }

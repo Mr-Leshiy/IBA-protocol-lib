@@ -1,8 +1,9 @@
 #[cfg(test)]
 mod test;
 
-use std::{error::Error, os::unix::thread};
+use std::error::Error;
 
+use async_std::channel::{self, Receiver, SendError, Sender};
 use libp2p::{
     floodsub::{self, Floodsub, FloodsubEvent, Topic},
     futures::StreamExt,
@@ -32,7 +33,6 @@ where
     MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
 {
     fn inject_event(&mut self, event: FloodsubEvent) {
-        println!("process event");
         if let FloodsubEvent::Message(message) = event {
             (self.msg_handler)(message.data);
         }
@@ -64,76 +64,96 @@ where
     }
 }
 
-pub struct NetworkService<BehaviourT: NetworkBehaviour>
+pub struct NetworkWorker<BehaviourT>
 where
     BehaviourT: NetworkBehaviour,
 {
     swarm: Swarm<BehaviourT>,
+
+    from_service: Receiver<Vec<u8>>,
 }
 
-impl<MsgHandlerF> NetworkService<Behaviour<MsgHandlerF>>
+pub struct NetworkService {
+    to_worker: Sender<Vec<u8>>,
+}
+
+pub fn build_network<MsgHandlerF>(
+    topic_name: String,
+    msg_handler: MsgHandlerF,
+) -> Result<(NetworkService, NetworkWorker<Behaviour<MsgHandlerF>>), Box<dyn Error>>
 where
     MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
 {
-    pub fn new(topic_name: String, msg_handler: MsgHandlerF) -> Result<Self, Box<dyn Error>> {
-        let local_key = identity::Keypair::generate_ed25519();
-        let local_peer_id = PeerId::from_public_key(local_key.public());
-        println!("Local peer id: {:?}", local_peer_id);
+    let local_key = identity::Keypair::generate_ed25519();
+    let local_peer_id = PeerId::from_public_key(local_key.public());
+    println!("Local peer id: {:?}", local_peer_id);
 
-        // Create a keypair for authenticated encryption of the transport.
-        let noise_key = noise::Keypair::<noise::X25519Spec>::new()
-            .into_authentic(&local_key)
-            .expect("Signing libp2p-noise static DH keypair failed.");
+    // Create a keypair for authenticated encryption of the transport.
+    let noise_key = noise::Keypair::<noise::X25519Spec>::new()
+        .into_authentic(&local_key)
+        .expect("Signing libp2p-noise static DH keypair failed.");
 
-        let mut floodsub = Floodsub::new(local_peer_id);
-        let floodsub_topic = floodsub::Topic::new(topic_name);
-        floodsub.subscribe(floodsub_topic.clone());
+    let mut floodsub = Floodsub::new(local_peer_id);
+    let floodsub_topic = floodsub::Topic::new(topic_name);
+    floodsub.subscribe(floodsub_topic.clone());
 
-        // Build transport
-        let transport = {
-            // create a simple TCP transport
-            tcp::TcpConfig::new()
-                .nodelay(true)
-                .upgrade(libp2p::core::upgrade::Version::V1)
-                .authenticate(noise::NoiseConfig::xx(noise_key).into_authenticated())
-                .multiplex(mplex::MplexConfig::new())
-                .boxed()
-        };
+    // Build transport
+    let transport = {
+        // create a simple TCP transport
+        tcp::TcpConfig::new()
+            .nodelay(true)
+            .upgrade(libp2p::core::upgrade::Version::V1)
+            .authenticate(noise::NoiseConfig::xx(noise_key).into_authenticated())
+            .multiplex(mplex::MplexConfig::new())
+            .boxed()
+    };
 
-        let mdns = async_std::task::block_on(Mdns::new(Default::default()))?;
+    let mdns = async_std::task::block_on(Mdns::new(Default::default()))?;
 
-        let behaviour = Behaviour {
-            floodsub,
-            mdns,
-            floodsub_topic,
-            msg_handler,
-        };
+    let behaviour = Behaviour {
+        floodsub,
+        mdns,
+        floodsub_topic,
+        msg_handler,
+    };
 
-        Ok(Self {
-            swarm: Swarm::new(transport, behaviour, local_peer_id),
-        })
+    let mut swarm = Swarm::new(transport, behaviour, local_peer_id);
+    swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
+
+    let (to_worker, from_service) = channel::unbounded();
+
+    let worker = NetworkWorker {
+        swarm,
+        from_service,
+    };
+    let service = NetworkService { to_worker };
+
+    Ok((service, worker))
+}
+
+impl NetworkService {
+    pub async fn broadcast_msg(&mut self, msg: Vec<u8>) -> Result<(), SendError<Vec<u8>>> {
+        self.to_worker.send(msg).await
     }
+}
 
-    pub fn run(service: &mut Self) -> Result<(), Box<dyn Error>> {
-        service
-            .swarm
-            .listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
-
-        std::thread::spawn(
-            || async {
-                loop {
-                    if let Some(SwarmEvent::NewListenAddr { address, .. }) = service.swarm.next().await {
-                        println!("Listening on {:?}", address);
+impl<MsgHandlerF> NetworkWorker<Behaviour<MsgHandlerF>>
+where
+    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
+{
+    pub async fn run(&mut self) {
+        loop {
+            futures::select! {
+                msg = self.from_service.select_next_some() => {
+                    let floodsub_topic = self.swarm.behaviour().floodsub_topic.clone();
+                    self.swarm.behaviour_mut().floodsub.publish(floodsub_topic, msg);
+                }
+                event = self.swarm.select_next_some() => {
+                    if let SwarmEvent::NewListenAddr { address, .. } = event {
+                        println!("Listening on: {:?}", address);
                     }
                 }
             }
-        );
-
-        Ok(())
-    }
-
-    pub fn broadcast_msg(&mut self, msg: impl Into<Vec<u8>>) {
-        let topic = self.swarm.behaviour().floodsub_topic.clone();
-        self.swarm.behaviour_mut().floodsub.publish(topic, msg);
+        }
     }
 }
