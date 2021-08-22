@@ -1,14 +1,10 @@
 [package]
-name = "iba-lib"
+name = "chat"
 version = "0.1.0"
 edition = "2018"
-
-[workspace]
-members = [
-    "network",
-    "chat",
-]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+network = { path = "../network" }
+tokio = { version = "1.10.0", features = [ "full", ]}
