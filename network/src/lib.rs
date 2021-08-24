@@ -1,68 +1,16 @@
-#[cfg(test)]
-mod test;
-
-use std::error::Error;
-
+mod behaviour;
 use async_std::channel::{self, Receiver, SendError, Sender};
+use behaviour::Behaviour;
 use libp2p::{
-    floodsub::{self, Floodsub, FloodsubEvent, Topic},
+    floodsub::{self, Floodsub},
     futures::StreamExt,
     identity,
-    mdns::{Mdns, MdnsEvent},
+    mdns::Mdns,
     mplex, noise,
-    swarm::{NetworkBehaviour, NetworkBehaviourEventProcess, SwarmEvent},
-    tcp, NetworkBehaviour, PeerId, Swarm, Transport,
+    swarm::{NetworkBehaviour, SwarmEvent},
+    tcp, PeerId, Swarm, Transport,
 };
-
-#[derive(NetworkBehaviour)]
-pub struct Behaviour<MsgHandlerF>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
-{
-    floodsub: Floodsub,
-    mdns: Mdns,
-
-    #[behaviour(ignore)]
-    floodsub_topic: Topic,
-    #[behaviour(ignore)]
-    msg_handler: MsgHandlerF,
-}
-
-impl<MsgHandlerF> NetworkBehaviourEventProcess<FloodsubEvent> for Behaviour<MsgHandlerF>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
-{
-    fn inject_event(&mut self, event: FloodsubEvent) {
-        if let FloodsubEvent::Message(message) = event {
-            (self.msg_handler)(message.data);
-        }
-    }
-}
-
-impl<MsgHandlerF> NetworkBehaviourEventProcess<MdnsEvent> for Behaviour<MsgHandlerF>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
-{
-    // Called when `mdns` produces an event.
-    fn inject_event(&mut self, event: MdnsEvent) {
-        match event {
-            MdnsEvent::Discovered(list) => {
-                for (peer, _) in list {
-                    println!("Discovered peer: {:?}", peer);
-                    self.floodsub.add_node_to_partial_view(peer);
-                }
-            }
-            MdnsEvent::Expired(list) => {
-                for (peer, _) in list {
-                    println!("Expired peer: {:?}", peer);
-                    if !self.mdns.has_node(&peer) {
-                        self.floodsub.remove_node_from_partial_view(&peer);
-                    }
-                }
-            }
-        }
-    }
-}
+use std::error::Error;
 
 pub struct NetworkWorker<BehaviourT>
 where
@@ -110,12 +58,7 @@ where
 
     let mdns = async_std::task::block_on(Mdns::new(Default::default()))?;
 
-    let behaviour = Behaviour {
-        floodsub,
-        mdns,
-        floodsub_topic,
-        msg_handler,
-    };
+    let behaviour = Behaviour::new(floodsub, mdns, floodsub_topic, msg_handler);
 
     let mut swarm = Swarm::new(transport, behaviour, local_peer_id);
     swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
@@ -145,8 +88,7 @@ where
         loop {
             futures::select! {
                 msg = self.from_service.select_next_some() => {
-                    let floodsub_topic = self.swarm.behaviour().floodsub_topic.clone();
-                    self.swarm.behaviour_mut().floodsub.publish(floodsub_topic, msg);
+                    self.swarm.behaviour_mut().broadcast_msg(msg);
                 }
                 event = self.swarm.select_next_some() => {
                     if let SwarmEvent::NewListenAddr { address, .. } = event {
