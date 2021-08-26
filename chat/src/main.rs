@@ -2,14 +2,12 @@ use std::io::{stdin, BufRead};
 
 #[tokio::main]
 async fn main() {
-    let (mut service, mut worker) = network::build_network("chat".into(), |data| {
+    let (mut service, worker) = network::build_network("chat".into(), |data| {
         println!("Received: '{:?}'", String::from_utf8_lossy(&data));
     })
     .unwrap();
 
-    tokio::spawn(async move {
-        worker.run().await;
-    });
+    tokio::spawn(worker);
 
     loop {
         let mut line = String::new();

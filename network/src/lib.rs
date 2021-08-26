@@ -1,6 +1,7 @@
 mod behaviour;
 use async_std::channel::{self, Receiver, SendError, Sender};
 use behaviour::Behaviour;
+use futures::Future;
 use libp2p::{
     floodsub::{self, Floodsub},
     futures::StreamExt,
@@ -10,7 +11,11 @@ use libp2p::{
     swarm::{NetworkBehaviour, SwarmEvent},
     tcp, PeerId, Swarm, Transport,
 };
-use std::error::Error;
+use std::{
+    error::Error,
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 pub struct NetworkWorker<BehaviourT>
 where
@@ -19,6 +24,57 @@ where
     swarm: Swarm<BehaviourT>,
 
     from_service: Receiver<Vec<u8>>,
+}
+
+impl<MsgHandlerF> Future for NetworkWorker<Behaviour<MsgHandlerF>>
+where
+    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
+{
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
+        // process msgs
+        let mut num_iterations = 0;
+        loop {
+            num_iterations += 1;
+            if num_iterations >= 100 {
+                cx.waker().wake_by_ref();
+                break;
+            }
+
+            let msg = match self.from_service.poll_next_unpin(cx) {
+                Poll::Ready(Some(msg)) => msg,
+                Poll::Ready(None) => return Poll::Ready(()),
+                Poll::Pending => break,
+            };
+
+            self.swarm.behaviour_mut().broadcast_msg(msg);
+        }
+
+        // process events
+        let mut num_iterations = 0;
+        loop {
+            num_iterations += 1;
+            if num_iterations >= 100 {
+                cx.waker().wake_by_ref();
+                break;
+            }
+
+           let event = match self.swarm.poll_next_unpin(cx) {
+                Poll::Ready(Some(event)) => event,
+                Poll::Ready(None) => return Poll::Ready(()),
+                Poll::Pending => break,
+            };
+
+            match event {
+                SwarmEvent::NewListenAddr{address, .. } =>  println!("Listening on: {:?}", address),
+                _ => {}
+            }
+
+        }
+
+        Poll::Pending
+    }
 }
 
 pub struct NetworkService {
@@ -77,25 +133,5 @@ where
 impl NetworkService {
     pub async fn broadcast_msg(&mut self, msg: Vec<u8>) -> Result<(), SendError<Vec<u8>>> {
         self.to_worker.send(msg).await
-    }
-}
-
-impl<MsgHandlerF> NetworkWorker<Behaviour<MsgHandlerF>>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
-{
-    pub async fn run(&mut self) {
-        loop {
-            futures::select! {
-                msg = self.from_service.select_next_some() => {
-                    self.swarm.behaviour_mut().broadcast_msg(msg);
-                }
-                event = self.swarm.select_next_some() => {
-                    if let SwarmEvent::NewListenAddr { address, .. } = event {
-                        println!("Listening on: {:?}", address);
-                    }
-                }
-            }
-        }
     }
 }
