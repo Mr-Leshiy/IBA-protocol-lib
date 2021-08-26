@@ -60,17 +60,18 @@ where
                 break;
             }
 
-           let event = match self.swarm.poll_next_unpin(cx) {
+            let event = match self.swarm.poll_next_unpin(cx) {
                 Poll::Ready(Some(event)) => event,
                 Poll::Ready(None) => return Poll::Ready(()),
                 Poll::Pending => break,
             };
 
             match event {
-                SwarmEvent::NewListenAddr{address, .. } =>  println!("Listening on: {:?}", address),
+                SwarmEvent::NewListenAddr { address, .. } => {
+                    println!("Listening on: {:?}", address)
+                }
                 _ => {}
             }
-
         }
 
         Poll::Pending
