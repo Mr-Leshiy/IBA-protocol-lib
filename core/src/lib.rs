@@ -1,46 +1,59 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ActionData {
-    size : u32,
-    data : Vec<u8>
-}
-
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Transaction {
-    version : u32,
-    timestamp : u64,
-    executed_data : ActionData,
-    condition_data : ActionData
+    version: u32,
+    timestamp: u64,
+    executed_data: Vec<u8>,
+    condition_data: Vec<u8>,
 }
+// TODO : implement custom serialize/deserialize with u32 as vector size instead of usize
 
-impl PartialEq for ActionData {
-    fn eq(&self, other: &Self) -> bool {
-        self.size == other.size &&
-        self.data == other.data
-    }
-}
-
-impl PartialEq for Transaction {
-    fn eq(&self, other: &Self) -> bool {
-        self.version == other.version &&
-        self.timestamp == other.timestamp &&
-        self.executed_data == other.executed_data &&
-        self.condition_data == other.condition_data
-    }
-}
-
-mod tests
-{
-    use crate::ActionData;
+mod tests {
     use crate::Transaction;
 
     #[test]
-    fn serialization_test() {
-        let transaction = Transaction { version : 1, timestamp : 2, executed_data : ActionData { size: 1, data: vec![9] }, condition_data : ActionData { size: 1, data: vec![9] }};
+    fn ser_test() {
+        let transaction = Transaction {
+            version: 1,
+            timestamp: 2,
+            executed_data: vec![9, 9],
+            condition_data: vec![9, 9],
+        };
+        let expected_serialized = [
+            1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 9, 9, 2, 0, 0, 0, 0, 0, 0,
+            0, 9, 9,
+        ];
         let serialized = bincode::serialize(&transaction).unwrap();
-        let deserialized: Transaction = bincode::deserialize(&serialized).unwrap();
+        assert_eq!(serialized, expected_serialized);
+    }
 
-        assert_eq!(transaction, deserialized);
+    #[test]
+    fn de_test() {
+        let expected_deserialized = Transaction {
+            version: 1,
+            timestamp: 2,
+            executed_data: vec![9, 9],
+            condition_data: vec![9, 9],
+        };
+        let serialized = [
+            1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 9, 9, 2, 0, 0, 0, 0, 0, 0,
+            0, 9, 9,
+        ];
+        let deserialized: Transaction = bincode::deserialize(&serialized[..]).unwrap();
+        assert_eq!(deserialized, expected_deserialized);
+    }
+
+    #[test]
+    fn ser_de_test() {
+        let transaction = Transaction {
+            version: 1,
+            timestamp: 256,
+            executed_data: vec![],
+            condition_data: vec![8, 8, 8],
+        };
+        let ser = bincode::serialize(&transaction).unwrap();
+        let de: Transaction = bincode::deserialize(&ser[..]).unwrap();
+        assert_eq!(transaction, de);
     }
 }
