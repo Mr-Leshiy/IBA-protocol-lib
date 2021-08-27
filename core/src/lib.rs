@@ -9,6 +9,7 @@ pub struct Transaction {
 }
 // TODO : implement custom serialize/deserialize with u32 as vector size instead of usize
 
+#[cfg(test)]
 mod tests {
     use crate::Transaction;
 
