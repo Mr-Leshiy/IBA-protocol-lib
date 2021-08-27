@@ -11,11 +11,11 @@ pub struct Transaction {
 
 // TODO : implement custom serialize/deserialize with u32 as vector size instead of usize
 impl Transaction {
-    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, bincode::Error> {
+    pub fn decode(bytes: Vec<u8>) -> Result<Self, bincode::Error> {
         bincode::deserialize(&bytes)
     }
 
-    pub fn get_bytes(&self) -> Result<Vec<u8>, bincode::Error> {
+    pub fn encode(&self) -> Result<Vec<u8>, bincode::Error> {
         bincode::serialize(self)
     }
 }
@@ -35,7 +35,7 @@ mod tests {
             1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 9, 9, 2, 0, 0, 0, 0, 0, 0,
             0, 9, 9,
         ];
-        let serialized = transaction.get_bytes().unwrap();
+        let serialized = transaction.encode().unwrap();
         assert_eq!(serialized, expected_serialized);
     }
 
@@ -51,7 +51,7 @@ mod tests {
             1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 9, 9, 2, 0, 0, 0, 0, 0, 0,
             0, 9, 9,
         ];
-        let deserialized = Transaction::from_bytes(serialized).unwrap();
+        let deserialized = Transaction::decode(serialized).unwrap();
         assert_eq!(deserialized, expected_deserialized);
     }
 
@@ -63,8 +63,8 @@ mod tests {
             executed_data: vec![],
             condition_data: vec![8, 8, 8],
         };
-        let ser = transaction.get_bytes().unwrap();
-        let de = Transaction::from_bytes(ser).unwrap();
+        let ser = transaction.encode().unwrap();
+        let de = Transaction::decode(ser).unwrap();
         assert_eq!(transaction, de);
     }
 }
