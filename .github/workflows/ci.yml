@@ -46,4 +46,22 @@ jobs:
           rustup default stable
       - name: Check fmt
         run: cargo fmt --all -- --check
+  clippy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set-Up
+        run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
+
+      - name: Install Rustup
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source ~/.cargo/env
+          rustup update nightly
+          rustup update stable
+          rustup default stable
+      - name: Check clippy
+        run: cargo clippy --all -- -D warnings
       
