@@ -2,10 +2,11 @@ use std::io::{stdin, BufRead};
 
 #[tokio::main]
 async fn main() {
-    let (mut service, worker) = network::build_network("chat".into(), |data| {
+    let handler = network::build_handler("chat".into(), |data| {
         println!("Received: '{:?}'", String::from_utf8_lossy(&data));
-    })
-    .unwrap();
+    }).unwrap();
+
+    let (mut service, worker) = network::build_network(handler);
 
     tokio::spawn(worker);
 
