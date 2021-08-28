@@ -1,13 +1,18 @@
 mod behaviour;
 mod handler;
+
 pub use handler::build_handler;
 
 use async_std::channel::{self, Receiver, SendError, Sender};
-use futures::{Future, Stream, StreamExt};
+use futures::{Stream, StreamExt};
 use std::{
+    future::Future,
     pin::Pin,
     task::{Context, Poll},
 };
+
+#[cfg(test)]
+mod tests;
 
 pub trait NetworkHandlerTrait: Stream + Unpin {
     fn broadcast_msg(&mut self, msg: Vec<u8>);
