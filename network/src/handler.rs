@@ -12,6 +12,9 @@ pub type NetworkHandler<MsgHandlerF> = Swarm<Behaviour<MsgHandlerF>>;
 impl<MsgHandlerF> crate::NetworkHandlerTrait for NetworkHandler<MsgHandlerF> where
     MsgHandlerF: 'static + FnMut(Vec<u8>) + Send
 {
+    fn broadcast_msg(&mut self, msg: Vec<u8>) {
+        self.behaviour_mut().broadcast_msg(msg);
+    }
 }
 
 pub fn build_handler<MsgHandlerF>(

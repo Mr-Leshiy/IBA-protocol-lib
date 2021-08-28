@@ -9,7 +9,9 @@ use std::{
     task::{Context, Poll},
 };
 
-pub trait NetworkHandlerTrait: Stream + Unpin {}
+pub trait NetworkHandlerTrait: Stream + Unpin {
+    fn broadcast_msg(&mut self, msg: Vec<u8>);
+}
 
 pub struct NetworkWorker<NetworkHandler: NetworkHandlerTrait> {
     handler: NetworkHandler,
@@ -30,13 +32,13 @@ impl<NetworkHandler: NetworkHandlerTrait> Future for NetworkWorker<NetworkHandle
                 break;
             }
 
-            let _ = match self.from_service.poll_next_unpin(cx) {
+            let msg = match self.from_service.poll_next_unpin(cx) {
                 Poll::Ready(Some(msg)) => msg,
                 Poll::Ready(None) => return Poll::Ready(()),
                 Poll::Pending => break,
             };
 
-            // self.handler.behaviour_mut().broadcast_msg(msg);
+            self.handler.broadcast_msg(msg);
         }
 
         // process events
