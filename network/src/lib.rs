@@ -1,14 +1,13 @@
 mod behaviour;
 use async_std::channel::{self, Receiver, SendError, Sender};
 use behaviour::Behaviour;
-use futures::Future;
+use futures::{Future, Stream};
 use libp2p::{
     floodsub::{self, Floodsub},
     futures::StreamExt,
     identity,
     mdns::Mdns,
     mplex, noise,
-    swarm::{NetworkBehaviour, SwarmEvent},
     tcp, PeerId, Swarm, Transport,
 };
 use std::{
@@ -17,18 +16,16 @@ use std::{
     task::{Context, Poll},
 };
 
-pub struct NetworkWorker<BehaviourT>
-where
-    BehaviourT: NetworkBehaviour,
+pub trait NetworkHandlerTrait: Stream + Unpin {}
+
+pub struct NetworkWorker<NetworkHandler: NetworkHandlerTrait>
 {
-    swarm: Swarm<BehaviourT>,
+    handler: NetworkHandler,
 
     from_service: Receiver<Vec<u8>>,
 }
 
-impl<MsgHandlerF> Future for NetworkWorker<Behaviour<MsgHandlerF>>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
+impl<NetworkHandler: NetworkHandlerTrait> Future for NetworkWorker<NetworkHandler>
 {
     type Output = ();
 
@@ -42,13 +39,13 @@ where
                 break;
             }
 
-            let msg = match self.from_service.poll_next_unpin(cx) {
+            let _ = match self.from_service.poll_next_unpin(cx) {
                 Poll::Ready(Some(msg)) => msg,
                 Poll::Ready(None) => return Poll::Ready(()),
                 Poll::Pending => break,
             };
 
-            self.swarm.behaviour_mut().broadcast_msg(msg);
+            // self.handler.behaviour_mut().broadcast_msg(msg);
         }
 
         // process events
@@ -60,16 +57,13 @@ where
                 break;
             }
 
-            let event = match self.swarm.poll_next_unpin(cx) {
+            let event = match self.handler.poll_next_unpin(cx) {
                 Poll::Ready(Some(event)) => event,
                 Poll::Ready(None) => return Poll::Ready(()),
                 Poll::Pending => break,
             };
 
             match event {
-                SwarmEvent::NewListenAddr { address, .. } => {
-                    println!("Listening on: {:?}", address)
-                }
                 _ => {}
             }
         }
@@ -82,10 +76,16 @@ pub struct NetworkService {
     to_worker: Sender<Vec<u8>>,
 }
 
+impl NetworkService {
+    pub async fn broadcast_msg(&mut self, msg: Vec<u8>) -> Result<(), SendError<Vec<u8>>> {
+        self.to_worker.send(msg).await
+    }
+}
+
 pub fn build_network<MsgHandlerF>(
     topic_name: String,
     msg_handler: MsgHandlerF,
-) -> Result<(NetworkService, NetworkWorker<Behaviour<MsgHandlerF>>), Box<dyn Error>>
+) -> Result<(NetworkService, NetworkWorker<Swarm<Behaviour<MsgHandlerF>>>), Box<dyn Error>>
 where
     MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
 {
@@ -117,22 +117,16 @@ where
 
     let behaviour = Behaviour::new(floodsub, mdns, floodsub_topic, msg_handler);
 
-    let mut swarm = Swarm::new(transport, behaviour, local_peer_id);
-    swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
+    let mut handler = Swarm::new(transport, behaviour, local_peer_id);
+    handler.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
 
     let (to_worker, from_service) = channel::unbounded();
 
     let worker = NetworkWorker {
-        swarm,
+        handler,
         from_service,
     };
     let service = NetworkService { to_worker };
 
     Ok((service, worker))
-}
-
-impl NetworkService {
-    pub async fn broadcast_msg(&mut self, msg: Vec<u8>) -> Result<(), SendError<Vec<u8>>> {
-        self.to_worker.send(msg).await
-    }
 }

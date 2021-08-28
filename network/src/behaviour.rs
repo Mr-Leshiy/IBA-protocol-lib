@@ -1,9 +1,4 @@
-use libp2p::{
-    floodsub::{Floodsub, FloodsubEvent, Topic},
-    mdns::{Mdns, MdnsEvent},
-    swarm::NetworkBehaviourEventProcess,
-    NetworkBehaviour,
-};
+use libp2p::{NetworkBehaviour, Swarm, floodsub::{Floodsub, FloodsubEvent, Topic}, mdns::{Mdns, MdnsEvent}, swarm::NetworkBehaviourEventProcess};
 
 #[derive(NetworkBehaviour)]
 pub struct Behaviour<MsgHandlerF>
@@ -75,4 +70,9 @@ where
             }
         }
     }
+}
+
+impl<MsgHandlerF> crate::NetworkHandlerTrait for Swarm<Behaviour<MsgHandlerF>> where MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
+{
+
 }
