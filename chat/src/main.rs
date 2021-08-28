@@ -4,7 +4,8 @@ use std::io::{stdin, BufRead};
 async fn main() {
     let handler = network::build_handler("chat".into(), |data| {
         println!("Received: '{:?}'", String::from_utf8_lossy(&data));
-    }).unwrap();
+    })
+    .unwrap();
 
     let (mut service, worker) = network::build_network(handler);
 

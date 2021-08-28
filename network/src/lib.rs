@@ -2,7 +2,7 @@ mod behaviour;
 mod handler;
 pub use handler::build_handler;
 
-use async_std::channel::{self, Receiver, Sender, SendError};
+use async_std::channel::{self, Receiver, SendError, Sender};
 use futures::{Future, Stream, StreamExt};
 use std::{
     pin::Pin,

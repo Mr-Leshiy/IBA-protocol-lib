@@ -1,7 +1,11 @@
 use crate::behaviour::Behaviour;
+use libp2p::{
+    floodsub::{self, Floodsub},
+    identity,
+    mdns::Mdns,
+    mplex, noise, tcp, PeerId, Swarm, Transport,
+};
 use std::error::Error;
-use libp2p::{Swarm, floodsub::{self,Floodsub}, identity, mdns::Mdns,
-mplex, noise, tcp, PeerId, Transport,};
 
 pub type NetworkHandler<MsgHandlerF> = Swarm<Behaviour<MsgHandlerF>>;
 
