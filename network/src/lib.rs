@@ -1,134 +1,73 @@
-#[cfg(test)]
-mod test;
+mod behaviour;
+mod handler;
 
-use std::error::Error;
+pub use handler::build_handler;
 
 use async_std::channel::{self, Receiver, SendError, Sender};
-use libp2p::{
-    floodsub::{self, Floodsub, FloodsubEvent, Topic},
-    futures::StreamExt,
-    identity,
-    mdns::{Mdns, MdnsEvent},
-    mplex, noise,
-    swarm::{NetworkBehaviour, NetworkBehaviourEventProcess, SwarmEvent},
-    tcp, NetworkBehaviour, PeerId, Swarm, Transport,
+use futures::{Stream, StreamExt};
+use std::{
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll},
 };
 
-#[derive(NetworkBehaviour)]
-pub struct Behaviour<MsgHandlerF>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
-{
-    floodsub: Floodsub,
-    mdns: Mdns,
+#[cfg(test)]
+mod tests;
 
-    #[behaviour(ignore)]
-    floodsub_topic: Topic,
-    #[behaviour(ignore)]
-    msg_handler: MsgHandlerF,
+pub trait NetworkHandlerTrait: Stream + Unpin {
+    fn broadcast_msg(&mut self, msg: Vec<u8>);
 }
 
-impl<MsgHandlerF> NetworkBehaviourEventProcess<FloodsubEvent> for Behaviour<MsgHandlerF>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
-{
-    fn inject_event(&mut self, event: FloodsubEvent) {
-        if let FloodsubEvent::Message(message) = event {
-            (self.msg_handler)(message.data);
-        }
-    }
-}
-
-impl<MsgHandlerF> NetworkBehaviourEventProcess<MdnsEvent> for Behaviour<MsgHandlerF>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
-{
-    // Called when `mdns` produces an event.
-    fn inject_event(&mut self, event: MdnsEvent) {
-        match event {
-            MdnsEvent::Discovered(list) => {
-                for (peer, _) in list {
-                    println!("Discovered peer: {:?}", peer);
-                    self.floodsub.add_node_to_partial_view(peer);
-                }
-            }
-            MdnsEvent::Expired(list) => {
-                for (peer, _) in list {
-                    println!("Expired peer: {:?}", peer);
-                    if !self.mdns.has_node(&peer) {
-                        self.floodsub.remove_node_from_partial_view(&peer);
-                    }
-                }
-            }
-        }
-    }
-}
-
-pub struct NetworkWorker<BehaviourT>
-where
-    BehaviourT: NetworkBehaviour,
-{
-    swarm: Swarm<BehaviourT>,
+pub struct NetworkWorker<NetworkHandler: NetworkHandlerTrait> {
+    handler: NetworkHandler,
 
     from_service: Receiver<Vec<u8>>,
 }
 
-pub struct NetworkService {
-    to_worker: Sender<Vec<u8>>,
+impl<NetworkHandler: NetworkHandlerTrait> Future for NetworkWorker<NetworkHandler> {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
+        // process msgs
+        let mut num_iterations = 0;
+        loop {
+            num_iterations += 1;
+            if num_iterations >= 100 {
+                cx.waker().wake_by_ref();
+                break;
+            }
+
+            let msg = match self.from_service.poll_next_unpin(cx) {
+                Poll::Ready(Some(msg)) => msg,
+                Poll::Ready(None) => return Poll::Ready(()),
+                Poll::Pending => break,
+            };
+
+            self.handler.broadcast_msg(msg);
+        }
+
+        // process events
+        let mut num_iterations = 0;
+        loop {
+            num_iterations += 1;
+            if num_iterations >= 100 {
+                cx.waker().wake_by_ref();
+                break;
+            }
+
+            let _ = match self.handler.poll_next_unpin(cx) {
+                Poll::Ready(Some(event)) => event,
+                Poll::Ready(None) => return Poll::Ready(()),
+                Poll::Pending => break,
+            };
+        }
+
+        Poll::Pending
+    }
 }
 
-pub fn build_network<MsgHandlerF>(
-    topic_name: String,
-    msg_handler: MsgHandlerF,
-) -> Result<(NetworkService, NetworkWorker<Behaviour<MsgHandlerF>>), Box<dyn Error>>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
-{
-    let local_key = identity::Keypair::generate_ed25519();
-    let local_peer_id = PeerId::from_public_key(local_key.public());
-    println!("Local peer id: {:?}", local_peer_id);
-
-    // Create a keypair for authenticated encryption of the transport.
-    let noise_key = noise::Keypair::<noise::X25519Spec>::new()
-        .into_authentic(&local_key)
-        .expect("Signing libp2p-noise static DH keypair failed.");
-
-    let mut floodsub = Floodsub::new(local_peer_id);
-    let floodsub_topic = floodsub::Topic::new(topic_name);
-    floodsub.subscribe(floodsub_topic.clone());
-
-    // Build transport
-    let transport = {
-        // create a simple TCP transport
-        tcp::TcpConfig::new()
-            .nodelay(true)
-            .upgrade(libp2p::core::upgrade::Version::V1)
-            .authenticate(noise::NoiseConfig::xx(noise_key).into_authenticated())
-            .multiplex(mplex::MplexConfig::new())
-            .boxed()
-    };
-
-    let mdns = async_std::task::block_on(Mdns::new(Default::default()))?;
-
-    let behaviour = Behaviour {
-        floodsub,
-        mdns,
-        floodsub_topic,
-        msg_handler,
-    };
-
-    let mut swarm = Swarm::new(transport, behaviour, local_peer_id);
-    swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
-
-    let (to_worker, from_service) = channel::unbounded();
-
-    let worker = NetworkWorker {
-        swarm,
-        from_service,
-    };
-    let service = NetworkService { to_worker };
-
-    Ok((service, worker))
+pub struct NetworkService {
+    to_worker: Sender<Vec<u8>>,
 }
 
 impl NetworkService {
@@ -137,23 +76,16 @@ impl NetworkService {
     }
 }
 
-impl<MsgHandlerF> NetworkWorker<Behaviour<MsgHandlerF>>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
-{
-    pub async fn run(&mut self) {
-        loop {
-            futures::select! {
-                msg = self.from_service.select_next_some() => {
-                    let floodsub_topic = self.swarm.behaviour().floodsub_topic.clone();
-                    self.swarm.behaviour_mut().floodsub.publish(floodsub_topic, msg);
-                }
-                event = self.swarm.select_next_some() => {
-                    if let SwarmEvent::NewListenAddr { address, .. } = event {
-                        println!("Listening on: {:?}", address);
-                    }
-                }
-            }
-        }
-    }
+pub fn build_network<NetworkHandler: NetworkHandlerTrait>(
+    handler: NetworkHandler,
+) -> (NetworkService, NetworkWorker<NetworkHandler>) {
+    let (to_worker, from_service) = channel::unbounded();
+
+    let worker = NetworkWorker {
+        handler,
+        from_service,
+    };
+    let service = NetworkService { to_worker };
+
+    (service, worker)
 }
