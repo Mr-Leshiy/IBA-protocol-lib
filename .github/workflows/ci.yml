@@ -46,4 +46,6 @@ jobs:
           rustup default stable
       - name: Check fmt
         run: cargo fmt --all -- --check
+      - name: Check clippy
+        run: cargo clippy -- -D warnings
       
