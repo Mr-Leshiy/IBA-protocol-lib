@@ -63,5 +63,5 @@ jobs:
           rustup update stable
           rustup default stable
       - name: Check clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --all -- -D warnings
       
