@@ -10,6 +10,7 @@ pub struct Transaction {
     condition_data: Vec<u8>,
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
