@@ -1,4 +1,3 @@
-use bincode::Options;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
@@ -20,6 +19,7 @@ impl Transaction {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
