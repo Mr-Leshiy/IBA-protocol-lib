@@ -1,23 +1,13 @@
-use bincode::Options;
-use serde::{Deserialize, Serialize};
+use parity_scale_codec::{Decode, Encode};
 
-#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Debug, PartialEq, Eq, Clone, Encode, Decode)]
 pub struct Transaction {
+    #[codec(compact)]
     version: u32,
+    #[codec(compact)]
     timestamp: u64,
     executed_data: Vec<u8>,
     condition_data: Vec<u8>,
-}
-
-// TODO : implement custom serialize/deserialize with u32 as vector size instead of usize
-impl Transaction {
-    pub fn decode(bytes: Vec<u8>) -> Result<Self, bincode::Error> {
-        bincode::deserialize(&bytes)
-    }
-
-    pub fn encode(&self) -> Result<Vec<u8>, bincode::Error> {
-        bincode::serialize(self)
-    }
 }
 
 mod tests {
@@ -31,11 +21,8 @@ mod tests {
             executed_data: vec![9, 9],
             condition_data: vec![9, 9],
         };
-        let expected_serialized = vec![
-            1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 9, 9, 2, 0, 0, 0, 0, 0, 0,
-            0, 9, 9,
-        ];
-        let serialized = transaction.encode().unwrap();
+        let expected_serialized: &[u8] = &[4, 8, 8, 9, 9, 8, 9, 9];
+        let serialized = transaction.encode();
         assert_eq!(serialized, expected_serialized);
     }
 
@@ -47,11 +34,8 @@ mod tests {
             executed_data: vec![9, 9],
             condition_data: vec![9, 9],
         };
-        let serialized = vec![
-            1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 9, 9, 2, 0, 0, 0, 0, 0, 0,
-            0, 9, 9,
-        ];
-        let deserialized = Transaction::decode(serialized).unwrap();
+        let mut serialized: &[u8] = &[4, 8, 8, 9, 9, 8, 9, 9];
+        let deserialized = Transaction::decode(&mut serialized).unwrap();
         assert_eq!(deserialized, expected_deserialized);
     }
 
@@ -63,8 +47,8 @@ mod tests {
             executed_data: vec![],
             condition_data: vec![8, 8, 8],
         };
-        let ser = transaction.encode().unwrap();
-        let de = Transaction::decode(ser).unwrap();
-        assert_eq!(transaction, de);
+        let mut serialized: &[u8] = &transaction.encode();
+        let deserialized = Transaction::decode(&mut serialized).unwrap();
+        assert_eq!(transaction, deserialized);
     }
 }

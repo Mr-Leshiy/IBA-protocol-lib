@@ -1,9 +1,7 @@
 [package]
 name = "core"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
-bincode = { version = "1.2.1"}
-bytes ="0.3.0"
+parity-scale-codec = { version = "2.0.0", default-features = false, features = ["derive"] }
