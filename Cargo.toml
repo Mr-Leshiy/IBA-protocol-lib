@@ -7,7 +7,7 @@ edition = "2018"
 members = [
     "network",
     "chat",
-    "corelib",
+    "lib-core",
 ]
 
 [dependencies]
