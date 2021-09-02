@@ -76,7 +76,7 @@ impl NetworkService {
     }
 }
 
-pub fn build_network<NetworkHandler: NetworkHandlerTrait>(
+pub fn build_network<'a, NetworkHandler: 'a + NetworkHandlerTrait>(
     handler: NetworkHandler,
 ) -> (NetworkService, NetworkWorker<NetworkHandler>) {
     let (to_worker, from_service) = channel::unbounded();
