@@ -7,7 +7,7 @@ edition = "2018"
 members = [
     "network",
     "chat",
-    "lib-core",
+    "iba-core",
 ]
 
 [dependencies]
