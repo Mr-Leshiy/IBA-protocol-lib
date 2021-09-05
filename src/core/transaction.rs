@@ -41,7 +41,7 @@ mod tests {
     #[test]
     fn ser_test() {
         let transaction = default_transaction();
-        let expected_serialized: &[u8] = &[4, 8, 8, 9, 9, 8, 9, 9];
+        let expected_serialized = hex::decode("0408080909080909").unwrap();
         let serialized = transaction.encode();
         assert_eq!(serialized, expected_serialized);
     }
@@ -49,27 +49,27 @@ mod tests {
     #[test]
     fn de_test() {
         let expected_deserialized = default_transaction();
-        let mut serialized: &[u8] = &[4, 8, 8, 9, 9, 8, 9, 9];
-        let deserialized = Transaction::decode(&mut serialized).unwrap();
+        let serialized = hex::decode("0408080909080909").unwrap();
+        let deserialized = Transaction::decode(&mut serialized.as_ref()).unwrap();
         assert_eq!(deserialized, expected_deserialized);
     }
 
     #[test]
     fn ser_de_test() {
         let transaction = default_transaction();
-        let mut serialized: &[u8] = &transaction.encode();
-        let deserialized = Transaction::decode(&mut serialized).unwrap();
+        let serialized = transaction.encode();
+        let deserialized = Transaction::decode(&mut serialized.as_ref()).unwrap();
         assert_eq!(transaction, deserialized);
     }
 
     #[test]
     fn hash_test() {
         let transaction = default_transaction();
-        let expected_hash = [
-            125, 140, 165, 206, 212, 16, 120, 225, 128, 46, 176, 16, 38, 242, 195, 1, 167, 50, 129,
-            246, 185, 147, 192, 215, 2, 211, 130, 68, 155, 0, 155, 194,
-        ];
-
+        let expected_hash: [u8; 32] =
+            hex::decode("7d8ca5ced41078e1802eb01026f2c301a73281f6b993c0d702d382449b009bc2")
+                .unwrap()
+                .try_into()
+                .unwrap();
         assert_eq!(transaction.hash(), expected_hash);
     }
 }
