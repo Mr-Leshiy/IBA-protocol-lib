@@ -18,8 +18,8 @@ struct OpCode {
 
 static OP_ADD: OpCode = OpCode { code: 1 };
 static OP_SUB: OpCode = OpCode { code: 2 };
-static OP_EQL: OpCode = OpCode { code: 5 };
-static OP_NQL: OpCode = OpCode { code: 6 };
+static OP_EQL: OpCode = OpCode { code: 3 };
+static OP_NQL: OpCode = OpCode { code: 4 };
 
 impl Script {
     pub fn evaluate(&self) -> Result<Option<Vec<u8>>, ScriptError> {
@@ -95,6 +95,7 @@ impl Script {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
