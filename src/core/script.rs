@@ -6,6 +6,8 @@ struct Script {
 
 enum ScriptError {
     UnknownOpCode(OpCode),
+    InvalidArgumentAmount,
+    UnexepectedArgumentType,
 }
 
 #[derive(Decode, Encode, PartialEq, Debug)]
@@ -35,12 +37,90 @@ impl Script {
             }
 
             match OpCode::decode(&mut data).unwrap() {
-                code if code == OP_ADD => {}
-                code if code == OP_SUB => {}
-                code if code == OP_MUL => {}
-                code if code == OP_DIV => {}
-                code if code == OP_EQL => {}
-                code if code == OP_NQL => {}
+                code if code == OP_ADD => {
+                    let arg1 = u64::decode(
+                        &mut args_stack
+                            .pop()
+                            .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .as_ref(),
+                    )
+                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+                    let arg2 = u64::decode(
+                        &mut args_stack
+                            .pop()
+                            .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .as_ref(),
+                    )
+                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+
+                    args_stack.push((arg1 + arg2).encode());
+                }
+                code if code == OP_SUB => {
+                    let arg1 = u64::decode(
+                        &mut args_stack
+                            .pop()
+                            .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .as_ref(),
+                    )
+                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+                    let arg2 = u64::decode(
+                        &mut args_stack
+                            .pop()
+                            .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .as_ref(),
+                    )
+                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+
+                    args_stack.push((arg1 - arg2).encode());
+                }
+                code if code == OP_MUL => {
+                    let arg1 = u64::decode(
+                        &mut args_stack
+                            .pop()
+                            .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .as_ref(),
+                    )
+                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+                    let arg2 = u64::decode(
+                        &mut args_stack
+                            .pop()
+                            .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .as_ref(),
+                    )
+                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+
+                    args_stack.push((arg1 * arg2).encode());
+                }
+                code if code == OP_DIV => {
+                    let arg1 = u64::decode(
+                        &mut args_stack
+                            .pop()
+                            .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .as_ref(),
+                    )
+                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+                    let arg2 = u64::decode(
+                        &mut args_stack
+                            .pop()
+                            .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .as_ref(),
+                    )
+                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+
+                    args_stack.push((arg1 / arg2).encode());
+                }
+                code if code == OP_EQL => {
+                    let arg1 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let arg2 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+
+                    args_stack.push((arg1 == arg2).encode());
+                }
+                code if code == OP_NQL => {
+                    let arg1 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let arg2 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+
+                    args_stack.push((arg1 != arg2).encode());
+                }
                 code => return Err(ScriptError::UnknownOpCode(code)),
             }
         }
