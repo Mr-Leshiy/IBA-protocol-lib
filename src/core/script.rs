@@ -23,7 +23,7 @@ static OP_EQL: OpCode = OpCode { code: 5 };
 static OP_NQL: OpCode = OpCode { code: 6 };
 
 impl Script {
-    pub fn evaluate(&self) -> Result<(), ScriptError> {
+    pub fn evaluate(&self) -> Result<Option<Vec<u8>>, ScriptError> {
         let mut data = self.data.as_slice();
 
         let mut args_stack = Vec::new();
@@ -125,7 +125,7 @@ impl Script {
             }
         }
 
-        Ok(())
+        Ok(args_stack.pop())
     }
 }
 
