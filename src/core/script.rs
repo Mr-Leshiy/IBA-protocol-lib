@@ -4,6 +4,7 @@ struct Script {
     data: Vec<u8>,
 }
 
+#[derive(Debug)]
 enum ScriptError {
     UnknownOpCode(OpCode),
     InvalidArgumentAmount,
@@ -17,8 +18,6 @@ struct OpCode {
 
 static OP_ADD: OpCode = OpCode { code: 1 };
 static OP_SUB: OpCode = OpCode { code: 2 };
-static OP_MUL: OpCode = OpCode { code: 3 };
-static OP_DIV: OpCode = OpCode { code: 4 };
 static OP_EQL: OpCode = OpCode { code: 5 };
 static OP_NQL: OpCode = OpCode { code: 6 };
 
@@ -30,12 +29,15 @@ impl Script {
 
         // while not end of the stream
         while data.remaining_len() != Ok(Some(0)) {
+            let prev_data = data;
+
             // try to decode argument
             if let Ok(arg) = Vec::<u8>::decode(&mut data) {
                 args_stack.push(arg);
                 continue;
             }
 
+            data = prev_data;
             match OpCode::decode(&mut data).unwrap() {
                 code if code == OP_ADD => {
                     let arg1 = u64::decode(
@@ -71,43 +73,7 @@ impl Script {
                     )
                     .map_err(|_| ScriptError::UnexepectedArgumentType)?;
 
-                    args_stack.push((arg1 - arg2).encode());
-                }
-                code if code == OP_MUL => {
-                    let arg1 = u64::decode(
-                        &mut args_stack
-                            .pop()
-                            .ok_or(ScriptError::InvalidArgumentAmount)?
-                            .as_ref(),
-                    )
-                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-                    let arg2 = u64::decode(
-                        &mut args_stack
-                            .pop()
-                            .ok_or(ScriptError::InvalidArgumentAmount)?
-                            .as_ref(),
-                    )
-                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-
-                    args_stack.push((arg1 * arg2).encode());
-                }
-                code if code == OP_DIV => {
-                    let arg1 = u64::decode(
-                        &mut args_stack
-                            .pop()
-                            .ok_or(ScriptError::InvalidArgumentAmount)?
-                            .as_ref(),
-                    )
-                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-                    let arg2 = u64::decode(
-                        &mut args_stack
-                            .pop()
-                            .ok_or(ScriptError::InvalidArgumentAmount)?
-                            .as_ref(),
-                    )
-                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-
-                    args_stack.push((arg1 / arg2).encode());
+                    args_stack.push((arg2 - arg1).encode());
                 }
                 code if code == OP_EQL => {
                     let arg1 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
@@ -133,18 +99,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn script_evaluate_test() {
-        let code1 = OpCode { code: 10 };
-        let code2 = OpCode { code: 12 };
-        let code3 = OpCode { code: 13 };
-
+    fn script_add_test() {
         let mut data = Vec::new();
-        data.append(&mut code1.encode());
-        data.append(&mut code2.encode());
-        data.append(&mut code3.encode());
+        data.append(&mut (5 as u64).encode().encode());
+        data.append(&mut (6 as u64).encode().encode());
+        data.append(&mut OP_ADD.encode());
 
-        let script = Script { data: data.clone() };
+        assert_eq!(
+            u64::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            Ok(11)
+        );
+    }
 
-        assert!(script.evaluate().is_ok());
+    #[test]
+    fn script_sub_test() {
+        let mut data = Vec::new();
+        data.append(&mut (6 as u64).encode().encode());
+        data.append(&mut (5 as u64).encode().encode());
+        data.append(&mut OP_SUB.encode());
+
+        assert_eq!(
+            u64::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            Ok(1)
+        );
     }
 }
