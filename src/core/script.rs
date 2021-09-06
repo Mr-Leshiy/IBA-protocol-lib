@@ -124,4 +124,50 @@ mod tests {
             Ok(1)
         );
     }
+
+    #[test]
+    fn script_eql_test() {
+        let mut data = Vec::new();
+        data.append(&mut (5 as u64).encode().encode());
+        data.append(&mut (5 as u64).encode().encode());
+        data.append(&mut OP_EQL.encode());
+
+        assert_eq!(
+            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            Ok(true)
+        );
+
+        let mut data = Vec::new();
+        data.append(&mut (6 as u64).encode().encode());
+        data.append(&mut (5 as u64).encode().encode());
+        data.append(&mut OP_EQL.encode());
+
+        assert_eq!(
+            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            Ok(false)
+        );
+    }
+
+    #[test]
+    fn script_nql_test() {
+        let mut data = Vec::new();
+        data.append(&mut (6 as u64).encode().encode());
+        data.append(&mut (5 as u64).encode().encode());
+        data.append(&mut OP_NQL.encode());
+
+        assert_eq!(
+            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            Ok(true)
+        );
+
+        let mut data = Vec::new();
+        data.append(&mut (5 as u64).encode().encode());
+        data.append(&mut (5 as u64).encode().encode());
+        data.append(&mut OP_NQL.encode());
+
+        assert_eq!(
+            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            Ok(false)
+        );
+    }
 }
