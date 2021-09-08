@@ -1,4 +1,4 @@
-use parity_scale_codec::{Decode, Encode, Input};
+use parity_scale_codec::{Decode, Encode};
 
 #[derive(Decode, Encode, PartialEq, Debug)]
 pub struct OpCode {
