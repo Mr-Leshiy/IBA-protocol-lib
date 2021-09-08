@@ -1,3 +1,4 @@
+use super::argument::*;
 use super::opcode::*;
 use parity_scale_codec::{Decode, Encode, Input};
 
@@ -32,22 +33,6 @@ enum ScriptError {
     UnexepectedArgumentType,
 }
 
-#[derive(Decode, Encode, Debug)]
-struct Argument {
-    data: Vec<u8>,
-}
-
-impl Argument {
-    // FIXME remove #[allow(dead_code)]
-    #[allow(dead_code)]
-    pub fn to_script(&self) -> Vec<u8> {
-        let mut data = Vec::new();
-        data.append(&mut OP_PUSH.encode());
-        data.append(&mut self.encode());
-        data
-    }
-}
-
 impl Script {
     // FIXME remove #[allow(dead_code)]
     #[allow(dead_code)]
@@ -65,79 +50,51 @@ impl Script {
                 }
                 //
                 code if code == OP_ADD => {
-                    let arg1 = u64::decode(
-                        &mut args_stack
-                            .pop()
-                            .ok_or(ScriptError::InvalidArgumentAmount)?
-                            .data
-                            .as_ref(),
-                    )
-                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-                    let arg2 = u64::decode(
-                        &mut args_stack
-                            .pop()
-                            .ok_or(ScriptError::InvalidArgumentAmount)?
-                            .data
-                            .as_ref(),
-                    )
-                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+                    let arg1: u64 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?
+                        .get_value()
+                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
 
-                    args_stack.push(Argument {
-                        data: (arg1 + arg2).encode(),
-                    });
+                    let arg2: u64 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?
+                        .get_value()
+                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+
+                    args_stack.push(Argument::new().set_value_chain(arg1 + arg2));
                 }
                 //
                 code if code == OP_SUB => {
-                    let arg1 = u64::decode(
-                        &mut args_stack
-                            .pop()
-                            .ok_or(ScriptError::InvalidArgumentAmount)?
-                            .data
-                            .as_ref(),
-                    )
-                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-                    let arg2 = u64::decode(
-                        &mut args_stack
-                            .pop()
-                            .ok_or(ScriptError::InvalidArgumentAmount)?
-                            .data
-                            .as_ref(),
-                    )
-                    .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+                    let arg1: u64 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?
+                        .get_value()
+                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
 
-                    args_stack.push(Argument {
-                        data: (arg2 - arg1).encode(),
-                    });
+                    let arg2: u64 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?
+                        .get_value()
+                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+
+                    args_stack.push(Argument::new().set_value_chain(arg2 - arg1));
                 }
                 //
                 code if code == OP_EQL => {
-                    let arg1 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .data;
-                    let arg2 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .data;
+                    let arg1 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
 
-                    args_stack.push(Argument {
-                        data: (arg1 == arg2).encode(),
-                    });
+                    let arg2 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+
+                    args_stack.push(Argument::new().set_value_chain(arg1 == arg2));
                 }
                 //
                 code if code == OP_NQL => {
-                    let arg1 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .data;
-                    let arg2 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .data;
+                    let arg1 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
 
-                    args_stack.push(Argument {
-                        data: (arg1 != arg2).encode(),
-                    });
+                    let arg2 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+
+                    args_stack.push(Argument::new().set_value_chain(arg1 != arg2));
                 }
                 code => return Err(ScriptError::UnknownOpCode(code)),
             }
@@ -154,17 +111,13 @@ mod tests {
     #[test]
     fn op_add_test() {
         let mut script = Script::new();
-        script.push_argument(&Argument {
-            data: (6 as u64).encode(),
-        });
+        script.push_argument(&Argument::new().set_value_chain(6 as u64));
 
-        script.push_argument(&Argument {
-            data: (5 as u64).encode(),
-        });
+        script.push_argument(&Argument::new().set_value_chain(5 as u64));
         script.push_op_code(&OP_ADD);
 
         assert_eq!(
-            u64::decode(&mut script.evaluate().unwrap().unwrap().data.as_ref()),
+            script.evaluate().unwrap().unwrap().get_value::<u64>(),
             Ok(11)
         );
     }
@@ -172,16 +125,12 @@ mod tests {
     #[test]
     fn op_sub_test() {
         let mut script = Script::new();
-        script.push_argument(&Argument {
-            data: (6 as u64).encode(),
-        });
-        script.push_argument(&Argument {
-            data: (5 as u64).encode(),
-        });
+        script.push_argument(&Argument::new().set_value_chain(6 as u64));
+        script.push_argument(&Argument::new().set_value_chain(5 as u64));
         script.push_op_code(&OP_SUB);
 
         assert_eq!(
-            u64::decode(&mut script.evaluate().unwrap().unwrap().data.as_ref()),
+            script.evaluate().unwrap().unwrap().get_value::<u64>(),
             Ok(1)
         );
     }
@@ -189,30 +138,22 @@ mod tests {
     #[test]
     fn op_eql_test() {
         let mut script = Script::new();
-        script.push_argument(&Argument {
-            data: (6 as u64).encode(),
-        });
-        script.push_argument(&Argument {
-            data: (6 as u64).encode(),
-        });
+        script.push_argument(&Argument::new().set_value_chain(6 as u64));
+        script.push_argument(&Argument::new().set_value_chain(6 as u64));
         script.push_op_code(&OP_EQL);
 
         assert_eq!(
-            bool::decode(&mut script.evaluate().unwrap().unwrap().data.as_ref()),
+            script.evaluate().unwrap().unwrap().get_value::<bool>(),
             Ok(true)
         );
 
         let mut script = Script::new();
-        script.push_argument(&Argument {
-            data: (6 as u64).encode(),
-        });
-        script.push_argument(&Argument {
-            data: (5 as u64).encode(),
-        });
+        script.push_argument(&Argument::new().set_value_chain(5 as u64));
+        script.push_argument(&Argument::new().set_value_chain(6 as u64));
         script.push_op_code(&OP_EQL);
 
         assert_eq!(
-            bool::decode(&mut script.evaluate().unwrap().unwrap().data.as_ref()),
+            script.evaluate().unwrap().unwrap().get_value::<bool>(),
             Ok(false)
         );
     }
@@ -220,30 +161,22 @@ mod tests {
     #[test]
     fn op_nql_test() {
         let mut script = Script::new();
-        script.push_argument(&Argument {
-            data: (6 as u64).encode(),
-        });
-        script.push_argument(&Argument {
-            data: (5 as u64).encode(),
-        });
+        script.push_argument(&Argument::new().set_value_chain(6 as u64));
+        script.push_argument(&Argument::new().set_value_chain(5 as u64));
         script.push_op_code(&OP_NQL);
 
         assert_eq!(
-            bool::decode(&mut script.evaluate().unwrap().unwrap().data.as_ref()),
+            script.evaluate().unwrap().unwrap().get_value::<bool>(),
             Ok(true)
         );
 
         let mut script = Script::new();
-        script.push_argument(&Argument {
-            data: (5 as u64).encode(),
-        });
-        script.push_argument(&Argument {
-            data: (5 as u64).encode(),
-        });
+        script.push_argument(&Argument::new().set_value_chain(6 as u64));
+        script.push_argument(&Argument::new().set_value_chain(6 as u64));
         script.push_op_code(&OP_NQL);
 
         assert_eq!(
-            bool::decode(&mut script.evaluate().unwrap().unwrap().data.as_ref()),
+            script.evaluate().unwrap().unwrap().get_value::<bool>(),
             Ok(false)
         );
     }
@@ -251,24 +184,16 @@ mod tests {
     #[test]
     fn script_test() {
         let mut script = Script::new();
-        script.push_argument(&Argument {
-            data: (6 as u64).encode(),
-        });
-        script.push_argument(&Argument {
-            data: (8 as u64).encode(),
-        });
+        script.push_argument(&Argument::new().set_value_chain(6 as u64));
+        script.push_argument(&Argument::new().set_value_chain(8 as u64));
         script.push_op_code(&OP_ADD);
-        script.push_argument(&Argument {
-            data: (12 as u64).encode(),
-        });
+        script.push_argument(&Argument::new().set_value_chain(12 as u64));
         script.push_op_code(&OP_SUB);
-        script.push_argument(&Argument {
-            data: (2 as u64).encode(),
-        });
+        script.push_argument(&Argument::new().set_value_chain(2 as u64));
         script.push_op_code(&OP_EQL);
 
         assert_eq!(
-            bool::decode(&mut script.evaluate().unwrap().unwrap().data.as_ref()),
+            script.evaluate().unwrap().unwrap().get_value::<bool>(),
             Ok(true)
         );
     }
