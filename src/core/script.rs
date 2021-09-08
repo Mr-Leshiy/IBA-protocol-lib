@@ -2,6 +2,7 @@ use super::argument::*;
 use super::opcode::*;
 use parity_scale_codec::{Decode, Encode, Input};
 
+#[derive(Default)]
 struct Script {
     data: Vec<u8>,
 }
