@@ -1,5 +1,5 @@
 use parity_scale_codec::{Decode, Encode, Input};
-
+use super::opcode::*;
 struct Script {
     data: Vec<u8>,
 }
@@ -11,39 +11,41 @@ enum ScriptError {
     UnexepectedArgumentType,
 }
 
-#[derive(Decode, Encode, PartialEq, Debug)]
-struct OpCode {
-    code: u32,
+#[derive(Decode, Encode, Debug)]
+struct Argument {
+    // encoded
+    data: Vec<u8>,
 }
 
-static OP_ADD: OpCode = OpCode { code: 1 };
-static OP_SUB: OpCode = OpCode { code: 2 };
-static OP_EQL: OpCode = OpCode { code: 3 };
-static OP_NQL: OpCode = OpCode { code: 4 };
+impl Argument {
+    pub fn to_script(&self) -> Vec<u8> {
+        let mut data = Vec::new();
+        data.append(&mut OP_PUSH.encode());
+        data.append(&mut self.encode());
+        data
+    }
+}
 
 impl Script {
-    pub fn evaluate(&self) -> Result<Option<Vec<u8>>, ScriptError> {
+    pub fn evaluate(&self) -> Result<Option<Argument>, ScriptError> {
         let mut data = self.data.as_slice();
 
         let mut args_stack = Vec::new();
 
         // while not end of the stream
         while data.remaining_len() != Ok(Some(0)) {
-            let prev_data = data;
-
-            // try to decode argument
-            if let Ok(arg) = Vec::<u8>::decode(&mut data) {
-                args_stack.push(arg);
-                continue;
-            }
-
-            data = prev_data;
             match OpCode::decode(&mut data).unwrap() {
+                code if code == OP_PUSH => {
+                    let arg = Argument::decode(&mut data).unwrap();
+                    args_stack.push(arg);
+                }
+                //
                 code if code == OP_ADD => {
                     let arg1 = u64::decode(
                         &mut args_stack
                             .pop()
                             .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .data
                             .as_ref(),
                     )
                     .map_err(|_| ScriptError::UnexepectedArgumentType)?;
@@ -51,17 +53,22 @@ impl Script {
                         &mut args_stack
                             .pop()
                             .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .data
                             .as_ref(),
                     )
                     .map_err(|_| ScriptError::UnexepectedArgumentType)?;
 
-                    args_stack.push((arg1 + arg2).encode());
+                    args_stack.push(Argument {
+                        data: (arg1 + arg2).encode(),
+                    });
                 }
+                //
                 code if code == OP_SUB => {
                     let arg1 = u64::decode(
                         &mut args_stack
                             .pop()
                             .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .data
                             .as_ref(),
                     )
                     .map_err(|_| ScriptError::UnexepectedArgumentType)?;
@@ -69,23 +76,44 @@ impl Script {
                         &mut args_stack
                             .pop()
                             .ok_or(ScriptError::InvalidArgumentAmount)?
+                            .data
                             .as_ref(),
                     )
                     .map_err(|_| ScriptError::UnexepectedArgumentType)?;
 
-                    args_stack.push((arg2 - arg1).encode());
+                    args_stack.push(Argument {
+                        data: (arg2 - arg1).encode(),
+                    });
                 }
+                //
                 code if code == OP_EQL => {
-                    let arg1 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
-                    let arg2 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let arg1 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?
+                        .data;
+                    let arg2 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?
+                        .data;
 
-                    args_stack.push((arg1 == arg2).encode());
+                    args_stack.push(Argument {
+                        data: (arg1 == arg2).encode(),
+                    });
                 }
+                //
                 code if code == OP_NQL => {
-                    let arg1 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
-                    let arg2 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let arg1 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?
+                        .data;
+                    let arg2 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?
+                        .data;
 
-                    args_stack.push((arg1 != arg2).encode());
+                    args_stack.push(Argument {
+                        data: (arg1 != arg2).encode(),
+                    });
                 }
                 code => return Err(ScriptError::UnknownOpCode(code)),
             }
@@ -102,12 +130,22 @@ mod tests {
     #[test]
     fn script_add_test() {
         let mut data = Vec::new();
-        data.append(&mut (5 as u64).encode().encode());
-        data.append(&mut (6 as u64).encode().encode());
+        data.append(
+            &mut Argument {
+                data: (5 as u64).encode(),
+            }
+            .to_script(),
+        );
+        data.append(
+            &mut Argument {
+                data: (6 as u64).encode(),
+            }
+            .to_script(),
+        );
         data.append(&mut OP_ADD.encode());
 
         assert_eq!(
-            u64::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            u64::decode(&mut Script { data }.evaluate().unwrap().unwrap().data.as_ref()),
             Ok(11)
         );
     }
@@ -115,12 +153,22 @@ mod tests {
     #[test]
     fn script_sub_test() {
         let mut data = Vec::new();
-        data.append(&mut (6 as u64).encode().encode());
-        data.append(&mut (5 as u64).encode().encode());
+        data.append(
+            &mut Argument {
+                data: (6 as u64).encode(),
+            }
+            .to_script(),
+        );
+        data.append(
+            &mut Argument {
+                data: (5 as u64).encode(),
+            }
+            .to_script(),
+        );
         data.append(&mut OP_SUB.encode());
 
         assert_eq!(
-            u64::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            u64::decode(&mut Script { data }.evaluate().unwrap().unwrap().data.as_ref()),
             Ok(1)
         );
     }
@@ -128,22 +176,42 @@ mod tests {
     #[test]
     fn script_eql_test() {
         let mut data = Vec::new();
-        data.append(&mut (5 as u64).encode().encode());
-        data.append(&mut (5 as u64).encode().encode());
+        data.append(
+            &mut Argument {
+                data: (6 as u64).encode(),
+            }
+            .to_script(),
+        );
+        data.append(
+            &mut Argument {
+                data: (6 as u64).encode(),
+            }
+            .to_script(),
+        );
         data.append(&mut OP_EQL.encode());
 
         assert_eq!(
-            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().data.as_ref()),
             Ok(true)
         );
 
         let mut data = Vec::new();
-        data.append(&mut (6 as u64).encode().encode());
-        data.append(&mut (5 as u64).encode().encode());
+        data.append(
+            &mut Argument {
+                data: (6 as u64).encode(),
+            }
+            .to_script(),
+        );
+        data.append(
+            &mut Argument {
+                data: (5 as u64).encode(),
+            }
+            .to_script(),
+        );
         data.append(&mut OP_EQL.encode());
 
         assert_eq!(
-            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().data.as_ref()),
             Ok(false)
         );
     }
@@ -151,22 +219,42 @@ mod tests {
     #[test]
     fn script_nql_test() {
         let mut data = Vec::new();
-        data.append(&mut (6 as u64).encode().encode());
-        data.append(&mut (5 as u64).encode().encode());
+        data.append(
+            &mut Argument {
+                data: (6 as u64).encode(),
+            }
+            .to_script(),
+        );
+        data.append(
+            &mut Argument {
+                data: (5 as u64).encode(),
+            }
+            .to_script(),
+        );
         data.append(&mut OP_NQL.encode());
 
         assert_eq!(
-            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().data.as_ref()),
             Ok(true)
         );
 
         let mut data = Vec::new();
-        data.append(&mut (5 as u64).encode().encode());
-        data.append(&mut (5 as u64).encode().encode());
+        data.append(
+            &mut Argument {
+                data: (5 as u64).encode(),
+            }
+            .to_script(),
+        );
+        data.append(
+            &mut Argument {
+                data: (5 as u64).encode(),
+            }
+            .to_script(),
+        );
         data.append(&mut OP_NQL.encode());
 
         assert_eq!(
-            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().as_ref()),
+            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().data.as_ref()),
             Ok(false)
         );
     }
