@@ -132,7 +132,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn script_add_test() {
+    fn op_add_test() {
         let mut data = Vec::new();
         data.append(
             &mut Argument {
@@ -155,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    fn script_sub_test() {
+    fn op_sub_test() {
         let mut data = Vec::new();
         data.append(
             &mut Argument {
@@ -178,7 +178,7 @@ mod tests {
     }
 
     #[test]
-    fn script_eql_test() {
+    fn op_eql_test() {
         let mut data = Vec::new();
         data.append(
             &mut Argument {
@@ -221,7 +221,7 @@ mod tests {
     }
 
     #[test]
-    fn script_nql_test() {
+    fn op_nql_test() {
         let mut data = Vec::new();
         data.append(
             &mut Argument {
@@ -260,6 +260,43 @@ mod tests {
         assert_eq!(
             bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().data.as_ref()),
             Ok(false)
+        );
+    }
+
+    #[test]
+    fn script_test() {
+        let mut data = Vec::new();
+        data.append(
+            &mut Argument {
+                data: (6 as u64).encode(),
+            }
+            .to_script(),
+        );
+        data.append(
+            &mut Argument {
+                data: (8 as u64).encode(),
+            }
+            .to_script(),
+        );
+        data.append(&mut OP_ADD.encode());
+        data.append(
+            &mut Argument {
+                data: (12 as u64).encode(),
+            }
+            .to_script(),
+        );
+        data.append(&mut OP_SUB.encode());
+        data.append(
+            &mut Argument {
+                data: (2 as u64).encode(),
+            }
+            .to_script(),
+        );
+        data.append(&mut OP_EQL.encode());
+
+        assert_eq!(
+            bool::decode(&mut Script { data }.evaluate().unwrap().unwrap().data.as_ref()),
+            Ok(true)
         );
     }
 }
