@@ -1,5 +1,6 @@
-use parity_scale_codec::{Decode, Encode, Input};
 use super::opcode::*;
+use parity_scale_codec::{Decode, Encode, Input};
+
 struct Script {
     data: Vec<u8>,
 }
