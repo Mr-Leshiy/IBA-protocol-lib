@@ -13,11 +13,12 @@ enum ScriptError {
 
 #[derive(Decode, Encode, Debug)]
 struct Argument {
-    // encoded
     data: Vec<u8>,
 }
 
 impl Argument {
+    // FIXME remove #[allow(dead_code)]
+    #[allow(dead_code)]
     pub fn to_script(&self) -> Vec<u8> {
         let mut data = Vec::new();
         data.append(&mut OP_PUSH.encode());
@@ -27,6 +28,8 @@ impl Argument {
 }
 
 impl Script {
+    // FIXME remove #[allow(dead_code)]
+    #[allow(dead_code)]
     pub fn evaluate(&self) -> Result<Option<Argument>, ScriptError> {
         let mut data = self.data.as_slice();
 
