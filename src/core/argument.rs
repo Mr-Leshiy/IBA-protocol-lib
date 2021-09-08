@@ -10,7 +10,7 @@ impl Argument {
     pub fn new() -> Self {
         Self { data: Vec::new() }
     }
-    
+
     pub fn to_script(&self) -> Vec<u8> {
         let mut data = Vec::new();
         data.append(&mut OP_PUSH.encode());
