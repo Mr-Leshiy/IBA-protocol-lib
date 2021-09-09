@@ -1,4 +1,4 @@
-use super::opcode::OP_PUSH;
+use super::opcode::{OpCode, OpPush};
 use parity_scale_codec::{Decode, Encode, Error};
 
 #[derive(Decode, Encode, PartialEq, Default, Debug)]
@@ -13,7 +13,7 @@ impl Argument {
 
     pub fn to_script(&self) -> Vec<u8> {
         let mut data = Vec::new();
-        data.append(&mut OP_PUSH.encode());
+        data.append(&mut OpPush::CODE.encode());
         data.append(&mut self.encode());
         data
     }
