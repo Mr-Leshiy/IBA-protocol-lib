@@ -49,6 +49,28 @@ impl Script {
                     let arg = Argument::decode(&mut data).unwrap();
                     args_stack.push(OpPush::handler(arg));
                 }
+                OpEql::CODE => {
+                    let arg1 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let arg2 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?;
+
+                    let res = OpEql::handler((arg1, arg2));
+                    args_stack.push(Argument::new().set_value_chain(res));
+                }
+                OpNql::CODE => {
+                    let arg1 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let arg2 = args_stack
+                        .pop()
+                        .ok_or(ScriptError::InvalidArgumentAmount)?;
+
+                    let res = OpNql::handler((arg1, arg2));
+                    args_stack.push(Argument::new().set_value_chain(res));
+                }
                 OpAdd::CODE => {
                     let arg1 = args_stack
                         .pop()
@@ -77,36 +99,6 @@ impl Script {
                         .map_err(|_| ScriptError::UnexepectedArgumentType)?;
 
                     let res = OpSub::handler((arg1, arg2));
-                    args_stack.push(Argument::new().set_value_chain(res));
-                }
-                OpEql::CODE => {
-                    let arg1 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .get_value()
-                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-                    let arg2 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .get_value()
-                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-
-                    let res = OpNql::handler((arg1, arg2));
-                    args_stack.push(Argument::new().set_value_chain(res));
-                }
-                OpNql::CODE => {
-                    let arg1 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .get_value()
-                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-                    let arg2 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .get_value()
-                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-
-                    let res = OpNql::handler((arg1, arg2));
                     args_stack.push(Argument::new().set_value_chain(res));
                 }
                 code => return Err(ScriptError::UnknownOpCode(code)),
@@ -161,8 +153,8 @@ mod tests {
         );
 
         let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(5 as u64));
         script.push_argument(&Argument::new().set_value_chain(6 as u64));
+        script.push_argument(&Argument::new().set_value_chain(5 as u64));
         script.push_op_code::<OpEql>();
 
         assert_eq!(

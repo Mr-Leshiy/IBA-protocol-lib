@@ -10,10 +10,10 @@ pub trait OpCode {
 }
 
 pub struct OpPush;
-pub struct OpAdd;
-pub struct OpSub;
 pub struct OpEql;
 pub struct OpNql;
+pub struct OpAdd;
+pub struct OpSub;
 
 impl OpCode for OpPush {
     type Args = Argument;
@@ -25,10 +25,30 @@ impl OpCode for OpPush {
     }
 }
 
+impl OpCode for OpEql {
+    type Args = (Argument, Argument);
+    type Res = bool;
+    const CODE: u32 = 1;
+
+    fn handler(args: Self::Args) -> Self::Res {
+        args.0 == args.1
+    }
+}
+
+impl OpCode for OpNql {
+    type Args = (Argument, Argument);
+    type Res = bool;
+    const CODE: u32 = 2;
+
+    fn handler(args: Self::Args) -> Self::Res {
+        args.0 != args.1
+    }
+}
+
 impl OpCode for OpAdd {
     type Args = (u64, u64);
     type Res = u64;
-    const CODE: u32 = 1;
+    const CODE: u32 = 3;
 
     fn handler(args: Self::Args) -> Self::Res {
         args.0 + args.1
@@ -38,29 +58,9 @@ impl OpCode for OpAdd {
 impl OpCode for OpSub {
     type Args = (u64, u64);
     type Res = u64;
-    const CODE: u32 = 2;
-
-    fn handler(args: Self::Args) -> Self::Res {
-        args.0 - args.1
-    }
-}
-
-impl OpCode for OpEql {
-    type Args = (Vec<u8>, Vec<u8>);
-    type Res = bool;
-    const CODE: u32 = 3;
-
-    fn handler(args: Self::Args) -> Self::Res {
-        args.0 == args.1
-    }
-}
-
-impl OpCode for OpNql {
-    type Args = (Vec<u8>, Vec<u8>);
-    type Res = bool;
     const CODE: u32 = 4;
 
     fn handler(args: Self::Args) -> Self::Res {
-        args.0 != args.1
+        args.1 - args.0
     }
 }

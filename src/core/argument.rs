@@ -1,7 +1,7 @@
 use super::opcode::{OpCode, OpPush};
 use parity_scale_codec::{Decode, Encode, Error};
 
-#[derive(Decode, Encode, PartialEq, Default, Debug)]
+#[derive(Decode, Encode, PartialEq, Clone, Default, Debug)]
 pub struct Argument {
     data: Vec<u8>,
 }
