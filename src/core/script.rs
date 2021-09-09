@@ -50,23 +50,15 @@ impl Script {
                     args_stack.push(OpPush::handler(arg));
                 }
                 OpEql::CODE => {
-                    let arg1 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?;
-                    let arg2 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let arg1 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let arg2 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
 
                     let res = OpEql::handler((arg1, arg2));
                     args_stack.push(Argument::new().set_value_chain(res));
                 }
                 OpNql::CODE => {
-                    let arg1 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?;
-                    let arg2 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let arg1 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let arg2 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
 
                     let res = OpNql::handler((arg1, arg2));
                     args_stack.push(Argument::new().set_value_chain(res));
