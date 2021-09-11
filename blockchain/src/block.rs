@@ -2,22 +2,14 @@ use parity_scale_codec::{Decode, Encode};
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
 
-#[derive(Encode, Decode, PartialEq, Debug)]
+#[derive(Encode, Decode, PartialEq, Clone, Debug)]
 pub struct BlockHeader {
-    number: u64,
-    prev_hash: [u8; 32],
-    root_hash: [u8; 32],
+    pub number: u64,
+    pub prev_hash: [u8; 32],
+    pub root_hash: [u8; 32],
 }
 
 impl BlockHeader {
-    pub fn new(number: u64, prev_hash: [u8; 32], root_hash: [u8; 32]) -> Self {
-        Self {
-            number,
-            prev_hash,
-            root_hash,
-        }
-    }
-
     pub fn hash(&self) -> [u8; 32] {
         Sha256::new()
             .chain(self.encode())
@@ -32,29 +24,52 @@ impl Block {
     pub fn new(number: u64, prev_hash: [u8; 32]) -> Block {
         let root_hash = [0; 32];
         Block {
-            header: BlockHeader::new(number, prev_hash, root_hash),
+            header: BlockHeader {
+                number,
+                prev_hash,
+                root_hash,
+            },
         }
     }
 }
 
+#[derive(PartialEq, Clone, Debug)]
 pub struct Block {
     header: BlockHeader,
 }
 
 impl Block {
-    pub fn hash(&self) -> &BlockHeader {
+    pub fn header(&self) -> &BlockHeader {
         &self.header
+    }
+
+    pub fn number(&self) -> u64 {
+        self.header.number
+    }
+
+    pub fn prev_hash(&self) -> [u8; 32] {
+        self.header.prev_hash
+    }
+
+    pub fn root_hash(&self) -> [u8; 32] {
+        self.header.root_hash
+    }
+
+    pub fn hash(&self) -> [u8; 32] {
+        self.header.hash()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
-
     use super::*;
 
     fn default_block_header() -> BlockHeader {
-        BlockHeader::new(0, [1; 32], [2; 32])
+        BlockHeader {
+            number: 0,
+            prev_hash: [1; 32],
+            root_hash: [2; 32],
+        }
     }
 
     #[test]
