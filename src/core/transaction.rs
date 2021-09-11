@@ -1,7 +1,6 @@
-use std::convert::TryInto;
-
 use parity_scale_codec::{Decode, Encode};
 use sha2::{Digest, Sha256};
+use std::convert::TryInto;
 
 #[derive(Debug, PartialEq, Eq, Clone, Encode, Decode)]
 pub struct Transaction {
