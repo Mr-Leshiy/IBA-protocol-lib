@@ -11,11 +11,12 @@ impl Chain {
         }
     }
 
-    pub fn generate_new_block(&mut self) -> &Block {
-        let tip = self.tip();
-        let block = Block::new(tip.number() + 1, tip.hash());
-        self.chain.push(block);
-        self.tip()
+    // TODO make Result<(), Error> value
+    pub fn set_tip(&mut self, tip: Block) {
+        assert_eq!(tip.prev_hash(), self.tip().hash());
+        assert_eq!(tip.number(), self.tip().number() + 1);
+
+        self.chain.push(tip);
     }
 
     pub fn tip(&self) -> &Block {
@@ -35,6 +36,7 @@ impl Chain {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::miner::generate_block;
 
     fn genesis_block() -> Block {
         Block::new(0, [0; 32])
@@ -52,14 +54,15 @@ mod tests {
         assert_eq!(chain.get_block(genesis.number()), Some(&genesis));
         assert_eq!(chain.get_block(genesis.number() + 1), None);
 
-        let tip = chain.generate_new_block().clone();
+        let new_block = generate_block(chain.tip());
+        chain.set_tip(new_block.clone());
 
-        assert_eq!(tip.number(), genesis.number() + 1);
-        assert_eq!(tip.prev_hash(), genesis.hash());
+        assert_eq!(new_block.number(), genesis.number() + 1);
+        assert_eq!(new_block.prev_hash(), genesis.hash());
         assert_ne!(chain.tip(), chain.genesis());
 
         assert_eq!(chain.get_block(genesis.number()), Some(&genesis));
-        assert_eq!(chain.get_block(tip.number()), Some(&tip));
-        assert_eq!(chain.get_block(tip.number() + 1), None);
+        assert_eq!(chain.get_block(new_block.number()), Some(&new_block));
+        assert_eq!(chain.get_block(new_block.number() + 1), None);
     }
 }

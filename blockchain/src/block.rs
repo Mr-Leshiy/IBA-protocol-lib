@@ -1,6 +1,7 @@
 use parity_scale_codec::{Decode, Encode};
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
+use std::fmt::Display;
 
 #[derive(Encode, Decode, PartialEq, Clone, Debug)]
 pub struct BlockHeader {
@@ -20,6 +21,19 @@ impl BlockHeader {
     }
 }
 
+impl Display for BlockHeader {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "hash: {}, number: {}, prev_hash: {}, root_hash: {}",
+            hex::encode(self.hash()),
+            self.number,
+            hex::encode(self.prev_hash),
+            hex::encode(self.root_hash)
+        )
+    }
+}
+
 impl Block {
     pub fn new(number: u64, prev_hash: [u8; 32]) -> Block {
         let root_hash = [0; 32];
@@ -30,6 +44,12 @@ impl Block {
                 root_hash,
             },
         }
+    }
+}
+
+impl Display for Block {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "header: ({})", self.header)
     }
 }
 
