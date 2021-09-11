@@ -1,13 +1,9 @@
 [package]
-name = "iba-lib"
+name = "blockchain"
 version = "0.1.0"
 edition = "2018"
 
-[workspace]
-members = [
-    "network",
-    "blockchain",
-]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 parity-scale-codec = { default-features = false, version = "2.2.0", features = ["derive"] }
