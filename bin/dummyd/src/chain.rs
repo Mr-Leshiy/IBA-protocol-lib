@@ -4,6 +4,11 @@ pub struct Chain {
     chain: Vec<Block>,
 }
 
+#[derive(Debug)]
+pub enum ChainError {
+    BlockCannotConnect(String),
+}
+
 impl Chain {
     pub fn new(genesis: Block) -> Self {
         Chain {
@@ -12,11 +17,24 @@ impl Chain {
     }
 
     // TODO make Result<(), Error> value
-    pub fn set_tip(&mut self, tip: Block) {
-        assert_eq!(tip.prev_hash(), self.tip().hash());
-        assert_eq!(tip.number(), self.tip().number() + 1);
+    pub fn set_tip(&mut self, tip: Block) -> Result<(), ChainError> {
+        if tip.prev_hash() != self.tip().hash() {
+            return Err(ChainError::BlockCannotConnect(format!(
+                "provided block does not reference for the current tip. provided prev hash: {}, currnet tip hash: {}",
+                hex::encode(tip.prev_hash()),
+                hex::encode(self.tip().hash())
+            )));
+        }
+        if tip.number() != self.tip().number() + 1 {
+            return Err(ChainError::BlockCannotConnect(format!(
+                "provided block does not continue for the current tip. provided block number: {}, expected number: {}",
+                tip.number(),
+                (self.tip().number() + 1)
+            )));
+        }
 
         self.chain.push(tip);
+        Ok(())
     }
 
     pub fn tip(&self) -> &Block {
