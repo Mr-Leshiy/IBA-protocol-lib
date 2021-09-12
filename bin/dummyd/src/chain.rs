@@ -72,7 +72,7 @@ mod tests {
         assert_eq!(chain.get_block(genesis.number() + 1), None);
 
         let new_block = generate_block(chain.tip());
-        chain.set_tip(new_block.clone());
+        assert!(chain.set_tip(new_block.clone()).is_ok());
 
         assert_eq!(new_block.number(), genesis.number() + 1);
         assert_eq!(new_block.prev_hash(), genesis.hash());
