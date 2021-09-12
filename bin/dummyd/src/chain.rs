@@ -16,7 +16,6 @@ impl Chain {
         }
     }
 
-    // TODO make Result<(), Error> value
     pub fn set_tip(&mut self, tip: Block) -> Result<(), ChainError> {
         if tip.prev_hash() != self.tip().hash() {
             return Err(ChainError::BlockCannotConnect(format!(
