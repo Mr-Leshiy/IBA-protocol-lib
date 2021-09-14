@@ -22,7 +22,7 @@ impl Blockchain {
             let new_block = generate_block(self.active_chain.tip());
             println!("mining new block: {} \n", new_block);
 
-            self.active_chain.set_tip(new_block);
+            self.active_chain.set_tip(new_block).unwrap();
             println!("new tip: {} \n", self.active_chain.tip());
         }
     }
