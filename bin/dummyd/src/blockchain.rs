@@ -19,7 +19,7 @@ impl Blockchain {
         println!("genesis: {}", self.active_chain.genesis());
 
         loop {
-            let new_block = generate_block(self.active_chain.tip());
+            let new_block = generate_block(self.active_chain.tip(), Vec::new());
             println!("mining new block: {} \n", new_block);
 
             self.active_chain.set_tip(new_block).unwrap();

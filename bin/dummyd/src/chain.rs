@@ -56,7 +56,7 @@ mod tests {
     use crate::miner::generate_block;
 
     fn genesis_block() -> Block {
-        Block::new(0, [0; 32])
+        Block::new(0, [0; 32], Vec::new())
     }
 
     #[test]
@@ -71,7 +71,7 @@ mod tests {
         assert_eq!(chain.get_block(genesis.number()), Some(&genesis));
         assert_eq!(chain.get_block(genesis.number() + 1), None);
 
-        let new_block = generate_block(chain.tip());
+        let new_block = generate_block(chain.tip(), Vec::new());
         assert!(chain.set_tip(new_block.clone()).is_ok());
 
         assert_eq!(new_block.number(), genesis.number() + 1);
