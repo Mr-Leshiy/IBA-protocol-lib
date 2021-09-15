@@ -11,7 +11,7 @@ pub struct Transaction {
 
 impl Transaction {
     pub fn hash(&self) -> [u8; 32] {
-        self.hash()
+        self.lib_tx.hash()
     }
 }
 
