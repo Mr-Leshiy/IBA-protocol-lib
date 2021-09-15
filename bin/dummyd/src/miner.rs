@@ -1,5 +1,5 @@
 use crate::block::Block;
-use iba_lib::core::transaction::Transaction;
+use crate::transaction::Transaction;
 use std::{thread::sleep, time::Duration};
 
 pub fn generate_block(prev_block: &Block, transaction: Vec<Transaction>) -> Block {

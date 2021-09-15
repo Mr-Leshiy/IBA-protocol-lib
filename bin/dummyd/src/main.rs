@@ -2,6 +2,7 @@ pub mod block;
 pub mod blockchain;
 pub mod chain;
 pub mod miner;
+pub mod transaction;
 
 use block::Block;
 use blockchain::Blockchain;
