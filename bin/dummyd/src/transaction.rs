@@ -22,7 +22,7 @@ impl Display for Transaction {
 }
 
 // calculate a sha256 hash from the transaction hashes
-pub fn calculate_root_hash(transactions: &Vec<Transaction>) -> [u8; 32] {
+pub fn calculate_root_hash(transactions: &[Transaction]) -> [u8; 32] {
     let mut data = Vec::new();
     transactions.iter().for_each(|tx| {
         data.append(&mut tx.hash().to_vec());

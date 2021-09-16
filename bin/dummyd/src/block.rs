@@ -1,4 +1,4 @@
-use crate::transaction::Transaction;
+use crate::transaction::{calculate_root_hash, Transaction};
 use parity_scale_codec::{Decode, Encode};
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
@@ -49,7 +49,7 @@ impl Display for Block {
 
 impl Block {
     pub fn new(number: u64, prev_hash: [u8; 32], transactions: Vec<Transaction>) -> Block {
-        let root_hash = [0; 32];
+        let root_hash = calculate_root_hash(&transactions);
         Block {
             header: BlockHeader {
                 number,
@@ -127,7 +127,4 @@ mod tests {
                 .unwrap();
         assert_eq!(block.hash(), expected_hash);
     }
-
-    #[test]
-    fn calculate_root_hash_test() {}
 }
