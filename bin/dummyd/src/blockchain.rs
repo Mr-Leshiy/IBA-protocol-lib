@@ -1,7 +1,7 @@
-use crate::block::Block;
-use crate::chain::Chain;
-use crate::miner::generate_block;
-use crate::validation::execute_block;
+use super::block::Block;
+use super::chain::Chain;
+use super::miner::generate_block;
+use super::validation::execute_block;
 
 pub struct Blockchain {
     active_chain: Chain,

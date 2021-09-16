@@ -2,15 +2,15 @@ use super::argument::*;
 use super::opcode::*;
 use parity_scale_codec::{Decode, Encode, Input};
 
-#[derive(Default)]
-struct Script {
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, Debug)]
+pub struct Script {
     data: Vec<u8>,
 }
 
 impl Script {
     // FIXME remove #[allow(dead_code)]
     #[allow(dead_code)]
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self { data: Vec::new() }
     }
 
@@ -25,10 +25,24 @@ impl Script {
     fn push_op_code<Op: OpCode>(&mut self) {
         self.data.append(&mut Op::CODE.encode());
     }
+
+    // FIXME remove #[allow(dead_code)]
+    #[allow(dead_code)]
+    fn push_argument_chain(mut self, arg: &Argument) -> Self {
+        self.data.append(&mut arg.to_script());
+        self
+    }
+
+    // FIXME remove #[allow(dead_code)]
+    #[allow(dead_code)]
+    fn push_op_code_chain<Op: OpCode>(mut self) -> Self {
+        self.data.append(&mut Op::CODE.encode());
+        self
+    }
 }
 
 #[derive(Debug)]
-enum ScriptError {
+pub enum ScriptError {
     UnknownOpCode(u32),
     InvalidArgumentAmount,
     UnexepectedArgumentType,
@@ -102,8 +116,16 @@ impl Script {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
+
+    pub fn default_script() -> Script {
+        Script::new()
+            .push_argument_chain(&Argument::new().set_value_chain(1 as u64))
+            .push_argument_chain(&Argument::new().set_value_chain(2 as u64))
+            .push_argument_chain(&Argument::new().set_value_chain(3 as u64))
+            .push_argument_chain(&Argument::new().set_value_chain(4 as u64))
+    }
 
     #[test]
     fn op_add_test() {
