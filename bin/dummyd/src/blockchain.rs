@@ -1,6 +1,7 @@
 use crate::block::Block;
 use crate::chain::Chain;
 use crate::miner::generate_block;
+use crate::validation::execute_block;
 
 pub struct Blockchain {
     active_chain: Chain,
@@ -22,8 +23,14 @@ impl Blockchain {
             let new_block = generate_block(self.active_chain.tip(), Vec::new());
             println!("mining new block: {} \n", new_block);
 
-            self.active_chain.set_tip(new_block).unwrap();
-            println!("new tip: {} \n", self.active_chain.tip());
+            println!("executing block: {} \n", new_block);
+            match execute_block(&new_block) {
+                Ok(_) => {
+                    self.active_chain.set_tip(new_block).unwrap();
+                    println!("new tip: {} \n", self.active_chain.tip());
+                }
+                Err(err) => println!("block: {}, is invalid, err: {}", new_block, &err),
+            }
         }
     }
 }

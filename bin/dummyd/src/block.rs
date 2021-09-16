@@ -79,6 +79,10 @@ impl Block {
     pub fn hash(&self) -> [u8; 32] {
         self.header.hash()
     }
+
+    pub fn transactions(&self) -> &[Transaction] {
+        &self.transactions
+    }
 }
 
 #[cfg(test)]
