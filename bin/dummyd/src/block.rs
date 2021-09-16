@@ -1,3 +1,4 @@
+use crate::transaction::{calculate_root_hash, Transaction};
 use parity_scale_codec::{Decode, Encode};
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
@@ -34,17 +35,10 @@ impl Display for BlockHeader {
     }
 }
 
-impl Block {
-    pub fn new(number: u64, prev_hash: [u8; 32]) -> Block {
-        let root_hash = [0; 32];
-        Block {
-            header: BlockHeader {
-                number,
-                prev_hash,
-                root_hash,
-            },
-        }
-    }
+#[derive(PartialEq, Clone, Debug)]
+pub struct Block {
+    header: BlockHeader,
+    transactions: Vec<Transaction>,
 }
 
 impl Display for Block {
@@ -53,12 +47,19 @@ impl Display for Block {
     }
 }
 
-#[derive(PartialEq, Clone, Debug)]
-pub struct Block {
-    header: BlockHeader,
-}
-
 impl Block {
+    pub fn new(number: u64, prev_hash: [u8; 32], transactions: Vec<Transaction>) -> Block {
+        let root_hash = calculate_root_hash(&transactions);
+        Block {
+            header: BlockHeader {
+                number,
+                prev_hash,
+                root_hash,
+            },
+            transactions,
+        }
+    }
+
     pub fn header(&self) -> &BlockHeader {
         &self.header
     }
