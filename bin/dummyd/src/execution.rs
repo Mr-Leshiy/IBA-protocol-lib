@@ -25,6 +25,5 @@ pub fn execute_block(block: &Block) -> Result<(), ExecutionError> {
 }
 
 pub fn execute_transaction(tx: &Transaction) -> Result<(), ExecutionError> {
-    tx.execute()
-        .map_err(|e| ExecutionError::InvalidTransaction(e))
+    tx.execute().map_err(ExecutionError::InvalidTransaction)
 }

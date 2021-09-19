@@ -41,7 +41,7 @@ impl Transaction {
             .lib_tx
             .executed_script()
             .evaluate()
-            .map_err(|e| TransactionError::InvalidScript(e))?
+            .map_err(TransactionError::InvalidScript)?
         {
             Some(arg) => Ok(arg
                 .get_value::<()>()
