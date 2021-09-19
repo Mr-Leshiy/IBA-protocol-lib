@@ -49,8 +49,6 @@ pub enum ScriptError {
 }
 
 impl Script {
-    // FIXME remove #[allow(dead_code)]
-    #[allow(dead_code)]
     pub fn evaluate(&self) -> Result<Option<Argument>, ScriptError> {
         let mut data = self.data.as_slice();
 
