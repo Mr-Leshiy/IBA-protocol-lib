@@ -1,7 +1,7 @@
 use super::block::Block;
 use super::chain::Chain;
+use super::execution::execute_block;
 use super::miner::generate_block;
-use super::validation::execute_block;
 
 pub struct Blockchain {
     active_chain: Chain,

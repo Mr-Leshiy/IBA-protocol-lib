@@ -9,8 +9,8 @@ pub struct Transaction {
     version: u32,
     #[codec(compact)]
     timestamp: u64,
-    executed_data: Script,
-    condition_data: Script,
+    executed_script: Script,
+    condition_script: Script,
 }
 
 impl Transaction {
@@ -23,6 +23,14 @@ impl Transaction {
             .map_err(|_| "Expected length of the array is 32")
             .unwrap()
     }
+
+    pub fn executed_script(&self) -> &Script {
+        &self.executed_script
+    }
+
+    pub fn condition_script(&self) -> &Script {
+        &self.condition_script
+    }
 }
 
 #[cfg(test)]
@@ -34,8 +42,8 @@ pub mod tests {
         Transaction {
             version: 1,
             timestamp: 2,
-            executed_data: default_script(),
-            condition_data: default_script(),
+            executed_script: default_script(),
+            condition_script: default_script(),
         }
     }
 

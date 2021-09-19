@@ -38,5 +38,4 @@ async fn basic_test() {
 
         assert_eq!(RECEIVED_MSG.pop(), Some(msg));
     }
-    ()
 }
