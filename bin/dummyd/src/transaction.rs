@@ -12,12 +12,11 @@ struct OpEcho;
 
 impl OpCode for OpEcho {
     type Args = ();
-    type Res = bool;
+    type Res = ();
     const CODE: u32 = 10;
 
     fn handler(_: Self::Args) -> Self::Res {
         println!("Echo!!!!");
-        true
     }
 }
 
@@ -44,17 +43,9 @@ impl Transaction {
             .evaluate()
             .map_err(|e| TransactionError::InvalidScript(e))?
         {
-            Some(arg) => {
-                if arg
-                    .get_value::<bool>()
-                    .map_err(|_| TransactionError::InvalidEvaluation)?
-                    == true
-                {
-                    Ok(())
-                } else {
-                    Err(TransactionError::InvalidEvaluation)
-                }
-            }
+            Some(arg) => Ok(arg
+                .get_value::<()>()
+                .map_err(|_| TransactionError::InvalidEvaluation)?),
             _ => Err(TransactionError::InvalidEvaluation),
         }
     }
