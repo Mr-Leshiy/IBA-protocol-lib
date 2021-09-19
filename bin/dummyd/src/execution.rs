@@ -1,5 +1,7 @@
-use crate::block::Block;
-use crate::transaction::{Transaction, TransactionError};
+use crate::{
+    block::Block,
+    transaction::{Transaction, TransactionError},
+};
 
 pub enum ExecutionError {
     InvalidBlock,

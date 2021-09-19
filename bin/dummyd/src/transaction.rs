@@ -1,9 +1,25 @@
-use iba_lib::core::script::ScriptError;
-use iba_lib::core::transaction::Transaction as IbaTransaction;
+use iba_lib::core::{
+    opcode::OpCode, script::ScriptError, transaction::Transaction as IbaTransaction,
+};
 use parity_scale_codec::{Decode, Encode};
 use sha2::{Digest, Sha256};
-use std::convert::TryInto;
-use std::fmt::{Debug, Display};
+use std::{
+    convert::TryInto,
+    fmt::{Debug, Display},
+};
+
+struct OpEcho;
+
+impl OpCode for OpEcho {
+    type Args = ();
+    type Res = bool;
+    const CODE: u32 = 10;
+
+    fn handler(_: Self::Args) -> Self::Res {
+        println!("Echo!!!!");
+        true
+    }
+}
 
 #[derive(Debug)]
 pub enum TransactionError {
