@@ -1,5 +1,4 @@
-use crate::block::Block;
-use crate::transaction::Transaction;
+use crate::{block::Block, transaction::Transaction};
 use std::{thread::sleep, time::Duration};
 
 pub fn generate_block(prev_block: &Block, transaction: Vec<Transaction>) -> Block {

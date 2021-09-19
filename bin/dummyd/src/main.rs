@@ -1,6 +1,7 @@
 pub mod block;
 pub mod blockchain;
 pub mod chain;
+pub mod execution;
 pub mod miner;
 pub mod transaction;
 

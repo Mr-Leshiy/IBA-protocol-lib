@@ -1,8 +1,7 @@
 use crate::transaction::{calculate_root_hash, Transaction};
 use parity_scale_codec::{Decode, Encode};
 use sha2::{Digest, Sha256};
-use std::convert::TryInto;
-use std::fmt::Display;
+use std::{convert::TryInto, fmt::Display};
 
 #[derive(Encode, Decode, PartialEq, Clone, Debug)]
 pub struct BlockHeader {
@@ -78,6 +77,10 @@ impl Block {
 
     pub fn hash(&self) -> [u8; 32] {
         self.header.hash()
+    }
+
+    pub fn transactions(&self) -> &[Transaction] {
+        &self.transactions
     }
 }
 
