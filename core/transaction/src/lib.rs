@@ -1,5 +1,5 @@
-use crate::core::script::Script;
 use parity_scale_codec::{Decode, Encode};
+use script::Script;
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
 
@@ -33,12 +33,11 @@ impl Transaction {
     }
 }
 
-#[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::core::script::tests::default_script;
+    use script::tests::default_script;
 
-    fn default_transaction() -> Transaction {
+    pub fn default_transaction() -> Transaction {
         Transaction {
             version: 1,
             timestamp: 2,

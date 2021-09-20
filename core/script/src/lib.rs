@@ -1,6 +1,9 @@
-use super::argument::*;
-use super::opcode::*;
+use argument::*;
+use opcode::*;
 use parity_scale_codec::{Decode, Encode, Input};
+
+pub mod argument;
+pub mod opcode;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, Debug)]
 pub struct Script {
@@ -113,24 +116,23 @@ impl Script {
     }
 }
 
-#[cfg(test)]
 pub mod tests {
     use super::*;
 
     pub fn default_script() -> Script {
         Script::new()
-            .push_argument_chain(&Argument::new().set_value_chain(1 as u64))
-            .push_argument_chain(&Argument::new().set_value_chain(2 as u64))
-            .push_argument_chain(&Argument::new().set_value_chain(3 as u64))
-            .push_argument_chain(&Argument::new().set_value_chain(4 as u64))
+            .push_argument_chain(&Argument::new().set_value_chain(1_u64))
+            .push_argument_chain(&Argument::new().set_value_chain(2_u64))
+            .push_argument_chain(&Argument::new().set_value_chain(3_u64))
+            .push_argument_chain(&Argument::new().set_value_chain(4_u64))
     }
 
     #[test]
     fn op_add_test() {
         let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6 as u64));
+        script.push_argument(&Argument::new().set_value_chain(6_u64));
 
-        script.push_argument(&Argument::new().set_value_chain(5 as u64));
+        script.push_argument(&Argument::new().set_value_chain(5_u64));
         script.push_op_code::<OpAdd>();
 
         assert_eq!(
@@ -142,8 +144,8 @@ pub mod tests {
     #[test]
     fn op_sub_test() {
         let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6 as u64));
-        script.push_argument(&Argument::new().set_value_chain(5 as u64));
+        script.push_argument(&Argument::new().set_value_chain(6_u64));
+        script.push_argument(&Argument::new().set_value_chain(5_u64));
         script.push_op_code::<OpSub>();
 
         assert_eq!(
@@ -155,8 +157,8 @@ pub mod tests {
     #[test]
     fn op_eql_test() {
         let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6 as u64));
-        script.push_argument(&Argument::new().set_value_chain(6 as u64));
+        script.push_argument(&Argument::new().set_value_chain(6_u64));
+        script.push_argument(&Argument::new().set_value_chain(6_u64));
         script.push_op_code::<OpEql>();
 
         assert_eq!(
@@ -165,8 +167,8 @@ pub mod tests {
         );
 
         let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6 as u64));
-        script.push_argument(&Argument::new().set_value_chain(5 as u64));
+        script.push_argument(&Argument::new().set_value_chain(6_u64));
+        script.push_argument(&Argument::new().set_value_chain(5_u64));
         script.push_op_code::<OpEql>();
 
         assert_eq!(
@@ -178,8 +180,8 @@ pub mod tests {
     #[test]
     fn op_nql_test() {
         let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6 as u64));
-        script.push_argument(&Argument::new().set_value_chain(5 as u64));
+        script.push_argument(&Argument::new().set_value_chain(6_u64));
+        script.push_argument(&Argument::new().set_value_chain(5_u64));
         script.push_op_code::<OpNql>();
 
         assert_eq!(
@@ -188,8 +190,8 @@ pub mod tests {
         );
 
         let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6 as u64));
-        script.push_argument(&Argument::new().set_value_chain(6 as u64));
+        script.push_argument(&Argument::new().set_value_chain(6_u64));
+        script.push_argument(&Argument::new().set_value_chain(6_u64));
         script.push_op_code::<OpNql>();
 
         assert_eq!(
@@ -201,12 +203,12 @@ pub mod tests {
     #[test]
     fn script_test() {
         let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6 as u64));
-        script.push_argument(&Argument::new().set_value_chain(8 as u64));
+        script.push_argument(&Argument::new().set_value_chain(6_u64));
+        script.push_argument(&Argument::new().set_value_chain(8_u64));
         script.push_op_code::<OpAdd>();
-        script.push_argument(&Argument::new().set_value_chain(12 as u64));
+        script.push_argument(&Argument::new().set_value_chain(12_u64));
         script.push_op_code::<OpSub>();
-        script.push_argument(&Argument::new().set_value_chain(2 as u64));
+        script.push_argument(&Argument::new().set_value_chain(2_u64));
         script.push_op_code::<OpEql>();
 
         assert_eq!(

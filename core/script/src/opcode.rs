@@ -1,4 +1,4 @@
-use super::argument::Argument;
+use crate::argument::Argument;
 use parity_scale_codec::{Decode, Encode};
 
 pub trait OpCode {
