@@ -1,10 +1,10 @@
-use transaction::Transaction as IbaTransaction;
 use parity_scale_codec::{Decode, Encode};
 use sha2::{Digest, Sha256};
 use std::{
     convert::TryInto,
     fmt::{Debug, Display},
 };
+use transaction::Transaction as IbaTransaction;
 
 #[derive(Debug)]
 pub enum TransactionError {
