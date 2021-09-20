@@ -116,7 +116,6 @@ impl Script {
     }
 }
 
-#[cfg(test)]
 pub mod tests {
     use super::*;
 

@@ -1,3 +1,4 @@
+use transaction::Transaction as IbaTransaction;
 use parity_scale_codec::{Decode, Encode};
 use sha2::{Digest, Sha256};
 use std::{
@@ -13,13 +14,12 @@ pub enum TransactionError {
 
 #[derive(Encode, Decode, PartialEq, Clone, Debug)]
 pub struct Transaction {
-    // lib_tx: IbaTransaction,
+    lib_tx: IbaTransaction,
 }
 
 impl Transaction {
     pub fn hash(&self) -> [u8; 32] {
-        // self.lib_tx.hash()
-        [0; 32]
+        self.lib_tx.hash()
     }
 
     pub fn execute(&self) -> Result<(), TransactionError> {

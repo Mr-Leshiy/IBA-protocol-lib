@@ -11,3 +11,4 @@ sha2 = { default-features = false, version = "0.9.6" }
 hex = { version = "0.4.3" }
 
 ## library
+transaction = { version = "0.1.0", path = "../../core/transaction" }

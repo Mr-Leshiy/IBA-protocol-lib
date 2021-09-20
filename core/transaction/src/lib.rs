@@ -1,4 +1,5 @@
 use parity_scale_codec::{Decode, Encode};
+use script::Script;
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
 
@@ -8,8 +9,8 @@ pub struct Transaction {
     version: u32,
     #[codec(compact)]
     timestamp: u64,
-    executed_script: Vec<u8>,
-    condition_script: Vec<u8>,
+    executed_script: Script,
+    condition_script: Script,
 }
 
 impl Transaction {
@@ -23,25 +24,25 @@ impl Transaction {
             .unwrap()
     }
 
-    pub fn executed_script(&self) -> &Vec<u8> {
+    pub fn executed_script(&self) -> &Script {
         &self.executed_script
     }
 
-    pub fn condition_script(&self) -> &Vec<u8> {
+    pub fn condition_script(&self) -> &Script {
         &self.condition_script
     }
 }
 
-#[cfg(test)]
 pub mod tests {
     use super::*;
+    use script::tests::default_script;
 
-    fn default_transaction() -> Transaction {
+    pub fn default_transaction() -> Transaction {
         Transaction {
             version: 1,
             timestamp: 2,
-            executed_script: Vec::new(),
-            condition_script: Vec::new(),
+            executed_script: default_script(),
+            condition_script: default_script(),
         }
     }
 
