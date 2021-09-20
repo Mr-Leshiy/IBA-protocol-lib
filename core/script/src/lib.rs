@@ -1,6 +1,9 @@
-use super::argument::*;
-use super::opcode::*;
+use argument::*;
+use opcode::*;
 use parity_scale_codec::{Decode, Encode, Input};
+
+pub mod argument;
+pub mod opcode;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, Debug)]
 pub struct Script {

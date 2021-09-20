@@ -1,4 +1,3 @@
-use crate::core::script::Script;
 use parity_scale_codec::{Decode, Encode};
 use sha2::{Digest, Sha256};
 use std::convert::TryInto;
@@ -9,8 +8,8 @@ pub struct Transaction {
     version: u32,
     #[codec(compact)]
     timestamp: u64,
-    executed_script: Script,
-    condition_script: Script,
+    executed_script: Vec<u8>,
+    condition_script: Vec<u8>,
 }
 
 impl Transaction {
@@ -24,11 +23,11 @@ impl Transaction {
             .unwrap()
     }
 
-    pub fn executed_script(&self) -> &Script {
+    pub fn executed_script(&self) -> &Vec<u8> {
         &self.executed_script
     }
 
-    pub fn condition_script(&self) -> &Script {
+    pub fn condition_script(&self) -> &Vec<u8> {
         &self.condition_script
     }
 }
@@ -36,14 +35,13 @@ impl Transaction {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::core::script::tests::default_script;
 
     fn default_transaction() -> Transaction {
         Transaction {
             version: 1,
             timestamp: 2,
-            executed_script: default_script(),
-            condition_script: default_script(),
+            executed_script: Vec::new(),
+            condition_script: Vec::new(),
         }
     }
 

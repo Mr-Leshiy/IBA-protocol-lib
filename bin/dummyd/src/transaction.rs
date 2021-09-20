@@ -1,6 +1,4 @@
-use iba_lib::core::{
-    opcode::OpCode, script::ScriptError, transaction::Transaction as IbaTransaction,
-};
+use iba_lib::core::transaction::Transaction as IbaTransaction;
 use parity_scale_codec::{Decode, Encode};
 use sha2::{Digest, Sha256};
 use std::{
@@ -8,21 +6,9 @@ use std::{
     fmt::{Debug, Display},
 };
 
-struct OpEcho;
-
-impl OpCode for OpEcho {
-    type Args = ();
-    type Res = ();
-    const CODE: u32 = 10;
-
-    fn handler(_: Self::Args) -> Self::Res {
-        println!("Echo!!!!");
-    }
-}
-
 #[derive(Debug)]
 pub enum TransactionError {
-    InvalidScript(ScriptError),
+    InvalidScript,
     InvalidEvaluation,
 }
 
@@ -37,17 +23,18 @@ impl Transaction {
     }
 
     pub fn execute(&self) -> Result<(), TransactionError> {
-        match self
-            .lib_tx
-            .executed_script()
-            .evaluate()
-            .map_err(TransactionError::InvalidScript)?
-        {
-            Some(arg) => Ok(arg
-                .get_value::<()>()
-                .map_err(|_| TransactionError::InvalidEvaluation)?),
-            _ => Err(TransactionError::InvalidEvaluation),
-        }
+        // match self
+        //     .lib_tx
+        //     .executed_script()
+        //     .evaluate()
+        //     .map_err(TransactionError::InvalidScript)?
+        // {
+        //     Some(arg) => Ok(arg
+        //         .get_value::<()>()
+        //         .map_err(|_| TransactionError::InvalidEvaluation)?),
+        //     _ => Err(TransactionError::InvalidEvaluation),
+        // }
+        Ok(())
     }
 }
 
