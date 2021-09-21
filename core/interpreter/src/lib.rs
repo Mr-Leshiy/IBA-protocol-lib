@@ -1,6 +1,8 @@
 extern crate proc_macro;
-use parse::ScriptDefinition;
+use core::panic;
+use parse::{OpCodeDefinition, ScriptDefinition};
 use proc_macro::TokenStream;
+use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
 mod parse;
@@ -8,10 +10,23 @@ mod parse;
 #[proc_macro]
 pub fn script_eval(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
-    script_eval_impl(&ast)
+    script_eval_impl(ast).into()
 }
 
-fn script_eval_impl(ast: &ScriptDefinition) -> TokenStream {
-    let gen = quote! {};
-    gen.into()
+fn decl_op_codes(op_codes: impl Iterator<Item = OpCodeDefinition>) -> TokenStream2 {
+    op_codes.fold(TokenStream2::default(), |combined, op_code| {
+        let name = op_code.name;
+        quote! {#combined
+             #name::CODE => {
+                let res = #name::handler(());
+                args_stack.push(script::argument::Argument::new().set_value_chain(res));
+             }
+        }
+    })
+}
+
+fn script_eval_impl(script: ScriptDefinition) -> TokenStream2 {
+    let op_codes = decl_op_codes(script.op_codes.into_iter());
+    panic!("op_codes: {}", op_codes.to_string());
+    quote! {}
 }

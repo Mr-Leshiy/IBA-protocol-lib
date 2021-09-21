@@ -20,7 +20,7 @@ impl OpCode for OpPush {
     type Res = Argument;
     const CODE: u32 = 0;
 
-    fn handler(args: Argument) -> Argument {
+    fn handler(args: Self::Args) -> Self::Res {
         args
     }
 }
