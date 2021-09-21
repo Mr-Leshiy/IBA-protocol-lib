@@ -8,9 +8,9 @@ use quote::quote;
 mod parse;
 
 #[proc_macro]
-pub fn script_eval(input: TokenStream) -> TokenStream {
+pub fn eval(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
-    script_eval_impl(ast).into()
+    eval_impl(ast).into()
 }
 
 fn decl_op_codes(op_codes: impl Iterator<Item = OpCodeDefinition>) -> TokenStream2 {
@@ -25,7 +25,7 @@ fn decl_op_codes(op_codes: impl Iterator<Item = OpCodeDefinition>) -> TokenStrea
     })
 }
 
-fn script_eval_impl(script: ScriptDefinition) -> TokenStream2 {
+fn eval_impl(script: ScriptDefinition) -> TokenStream2 {
     let op_codes = decl_op_codes(script.op_codes.into_iter());
     panic!("op_codes: {}", op_codes.to_string());
     quote! {}

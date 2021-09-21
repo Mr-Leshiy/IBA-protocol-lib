@@ -2,6 +2,7 @@
 members = [
     "core/script",
     "core/interpreter",
+    "core/interpreter-test",
     "core/transaction",
     "network",
     "bin/dummyd",
