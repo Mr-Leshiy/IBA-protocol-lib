@@ -1,5 +1,5 @@
 extern crate proc_macro;
-use core::panic;
+
 use parse::{OpCodeDefinition, ScriptDefinition};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
@@ -26,7 +26,6 @@ fn decl_op_codes(op_codes: impl Iterator<Item = OpCodeDefinition>) -> TokenStrea
 }
 
 fn eval_impl(script: ScriptDefinition) -> TokenStream2 {
-    let op_codes = decl_op_codes(script.op_codes.into_iter());
-    panic!("op_codes: {}", op_codes.to_string());
+    let _ = decl_op_codes(script.op_codes.into_iter());
     quote! {}
 }
