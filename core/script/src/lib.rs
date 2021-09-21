@@ -216,4 +216,12 @@ pub mod tests {
             Ok(true)
         );
     }
+
+    #[test]
+    fn script_eval_test() {
+        let script1 = Script::new();
+        let val1 = 1;
+        let val2 = 5;
+        interpreter::script_eval!(script, OpCode{});
+    }
 }

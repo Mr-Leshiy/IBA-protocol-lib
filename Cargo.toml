@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "core/script",
+    "core/interpreter",
     "core/transaction",
     "network",
     "bin/dummyd",
