@@ -80,8 +80,8 @@ fn interpret_impl(script: ScriptDefinition) -> TokenStream2 {
 
                         #op_codes_decl
 
-                        code => { 
-                            return Err(ScriptError::UnknownOpCode(code)); 
+                        code => {
+                            return Err(ScriptError::UnknownOpCode(code));
                         }
                     }
                 }
