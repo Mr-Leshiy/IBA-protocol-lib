@@ -1,5 +1,12 @@
 use crate::argument::Argument;
+use impl_trait_for_tuples::impl_for_tuples;
 use parity_scale_codec::{Decode, Encode};
+
+#[derive(Debug)]
+pub enum OpCodeError {
+    InvalidArgumentAmount,
+    UnexepectedArgumentType,
+}
 
 pub trait OpCode {
     type Args: Encode + Decode;
@@ -7,6 +14,55 @@ pub trait OpCode {
     const CODE: u32;
 
     fn handler(args: Self::Args) -> Self::Res;
+}
+
+pub trait OpCodeVal: Sized + Encode + Decode {
+    fn decode_arguments(args_stack: &mut Vec<Argument>) -> Result<Self, OpCodeError> {
+        Ok(args_stack
+            .pop()
+            .ok_or(OpCodeError::InvalidArgumentAmount)?
+            .get_value()
+            .map_err(|_| OpCodeError::UnexepectedArgumentType)?)
+    }
+}
+
+impl OpCodeVal for u8 {}
+impl OpCodeVal for u16 {}
+impl OpCodeVal for u32 {}
+impl OpCodeVal for u64 {}
+impl OpCodeVal for u128 {}
+
+impl OpCodeVal for i8 {}
+impl OpCodeVal for i16 {}
+impl OpCodeVal for i32 {}
+impl OpCodeVal for i64 {}
+impl OpCodeVal for i128 {}
+
+impl OpCodeVal for bool {}
+
+#[impl_for_tuples(15)]
+impl OpCodeVal for Tuple {
+    fn decode_arguments(args_stack: &mut Vec<Argument>) -> Result<Self, OpCodeError> {
+        let res = for_tuples!( ( #( Tuple::decode_arguments(args_stack)? ), *) );
+        Ok(res)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decode_arguments_test() {
+        let mut args = Vec::new();
+
+        args.push(Argument::new().set_value_chain(5_u64));
+        args.push(Argument::new().set_value_chain(11_u64));
+
+        let (val1, val2) = <(u64, u64)>::decode_arguments(&mut args).unwrap();
+        assert_eq!(val1, 11_u64);
+        assert_eq!(val2, 5_u64);
+    }
 }
 
 pub struct OpPush;

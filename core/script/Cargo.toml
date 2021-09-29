@@ -7,3 +7,4 @@ edition = "2018"
 
 [dependencies]
 parity-scale-codec = { default-features = false, version = "2.2.0", features = ["derive"] }
+impl-trait-for-tuples = { default-features = false, version = "0.2.1" }
