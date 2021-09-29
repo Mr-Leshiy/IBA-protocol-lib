@@ -7,3 +7,4 @@ edition = "2018"
 
 [dependencies]
 interpreter = { version = "0.1.0", path = "../interpreter" }
+script = { version = "0.1.0", path = "../script" }
