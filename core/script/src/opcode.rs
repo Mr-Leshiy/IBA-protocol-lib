@@ -18,11 +18,11 @@ pub trait OpCode {
 
 pub trait OpCodeVal: Sized + Encode + Decode {
     fn decode_arguments(args_stack: &mut Vec<Argument>) -> Result<Self, OpCodeError> {
-        Ok(args_stack
+        args_stack
             .pop()
             .ok_or(OpCodeError::InvalidArgumentAmount)?
             .get_value()
-            .map_err(|_| OpCodeError::UnexepectedArgumentType)?)
+            .map_err(|_| OpCodeError::UnexepectedArgumentType)
     }
 
     fn encode_arguments(self, args_stack: &mut Vec<Argument>) {

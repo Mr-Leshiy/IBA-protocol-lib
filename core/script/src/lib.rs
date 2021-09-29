@@ -66,25 +66,25 @@ impl Script {
                 }
                 OpEql::CODE => {
                     let args = <OpEql as OpCode>::Args::decode_arguments(&mut args_stack)
-                        .map_err(|e| ScriptError::InvalidArguments(e))?;
+                        .map_err(ScriptError::InvalidArguments)?;
 
                     OpEql::handler(args).encode_arguments(&mut args_stack);
                 }
                 OpNql::CODE => {
                     let args = <OpNql as OpCode>::Args::decode_arguments(&mut args_stack)
-                        .map_err(|e| ScriptError::InvalidArguments(e))?;
+                        .map_err(ScriptError::InvalidArguments)?;
 
                     OpNql::handler(args).encode_arguments(&mut args_stack);
                 }
                 OpAdd::CODE => {
                     let args = <OpAdd as OpCode>::Args::decode_arguments(&mut args_stack)
-                        .map_err(|e| ScriptError::InvalidArguments(e))?;
+                        .map_err(ScriptError::InvalidArguments)?;
 
                     OpAdd::handler(args).encode_arguments(&mut args_stack);
                 }
                 OpSub::CODE => {
                     let args = <OpSub as OpCode>::Args::decode_arguments(&mut args_stack)
-                        .map_err(|e| ScriptError::InvalidArguments(e))?;
+                        .map_err(ScriptError::InvalidArguments)?;
 
                     OpSub::handler(args).encode_arguments(&mut args_stack);
                 }
