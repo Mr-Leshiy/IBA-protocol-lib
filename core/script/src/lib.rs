@@ -42,6 +42,10 @@ impl Script {
         self.data.append(&mut Op::CODE.encode());
         self
     }
+
+    pub fn get_data(&self) -> Vec<u8> {
+        self.data.clone()
+    }
 }
 
 #[derive(Debug)]
@@ -52,47 +56,51 @@ pub enum ScriptError {
 
 impl Script {
     pub fn evaluate(&self) -> Result<Option<Argument>, ScriptError> {
-        let mut data = self.data.as_slice();
+        let f = || {
+            let data = self.get_data();
+            let mut data = data.as_slice();
 
-        let mut args_stack = Vec::new();
+            let mut args_stack = Vec::new();
 
-        // while not end of the stream
-        while data.remaining_len() != Ok(Some(0)) {
-            match u32::decode(&mut data).unwrap() {
-                OpPush::CODE => {
-                    let arg = Argument::decode(&mut data).unwrap();
+            // while not end of the stream
+            while data.remaining_len() != Ok(Some(0)) {
+                match u32::decode(&mut data).unwrap() {
+                    OpPush::CODE => {
+                        let arg = Argument::decode(&mut data).unwrap();
 
-                    OpPush::handler(arg).encode_arguments(&mut args_stack);
+                        OpPush::handler(arg).encode_arguments(&mut args_stack);
+                    }
+                    OpEql::CODE => {
+                        let args = <OpEql as OpCode>::Args::decode_arguments(&mut args_stack)
+                            .map_err(ScriptError::InvalidArguments)?;
+
+                        OpEql::handler(args).encode_arguments(&mut args_stack);
+                    }
+                    OpNql::CODE => {
+                        let args = <OpNql as OpCode>::Args::decode_arguments(&mut args_stack)
+                            .map_err(ScriptError::InvalidArguments)?;
+
+                        OpNql::handler(args).encode_arguments(&mut args_stack);
+                    }
+                    OpAdd::CODE => {
+                        let args = <OpAdd as OpCode>::Args::decode_arguments(&mut args_stack)
+                            .map_err(ScriptError::InvalidArguments)?;
+
+                        OpAdd::handler(args).encode_arguments(&mut args_stack);
+                    }
+                    OpSub::CODE => {
+                        let args = <OpSub as OpCode>::Args::decode_arguments(&mut args_stack)
+                            .map_err(ScriptError::InvalidArguments)?;
+
+                        OpSub::handler(args).encode_arguments(&mut args_stack);
+                    }
+                    code => return Err(ScriptError::UnknownOpCode(code)),
                 }
-                OpEql::CODE => {
-                    let args = <OpEql as OpCode>::Args::decode_arguments(&mut args_stack)
-                        .map_err(ScriptError::InvalidArguments)?;
-
-                    OpEql::handler(args).encode_arguments(&mut args_stack);
-                }
-                OpNql::CODE => {
-                    let args = <OpNql as OpCode>::Args::decode_arguments(&mut args_stack)
-                        .map_err(ScriptError::InvalidArguments)?;
-
-                    OpNql::handler(args).encode_arguments(&mut args_stack);
-                }
-                OpAdd::CODE => {
-                    let args = <OpAdd as OpCode>::Args::decode_arguments(&mut args_stack)
-                        .map_err(ScriptError::InvalidArguments)?;
-
-                    OpAdd::handler(args).encode_arguments(&mut args_stack);
-                }
-                OpSub::CODE => {
-                    let args = <OpSub as OpCode>::Args::decode_arguments(&mut args_stack)
-                        .map_err(ScriptError::InvalidArguments)?;
-
-                    OpSub::handler(args).encode_arguments(&mut args_stack);
-                }
-                code => return Err(ScriptError::UnknownOpCode(code)),
             }
-        }
 
-        Ok(args_stack.pop())
+            Ok(args_stack.pop())
+        };
+        f()
     }
 }
 
