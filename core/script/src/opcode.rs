@@ -26,7 +26,7 @@ pub trait OpCodeVal: Sized + Encode + Decode {
     }
 
     fn encode_arguments(self, args_stack: &mut Vec<Argument>) {
-        Argument::new().set_value(self);
+        args_stack.push(Argument::new().set_value_chain(self));
     }
 }
 
