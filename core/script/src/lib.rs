@@ -47,8 +47,7 @@ impl Script {
 #[derive(Debug)]
 pub enum ScriptError {
     UnknownOpCode(u32),
-    InvalidArgumentAmount,
-    UnexepectedArgumentType,
+    InvalidArguments(OpCodeError),
 }
 
 impl Script {
@@ -62,51 +61,32 @@ impl Script {
             match u32::decode(&mut data).unwrap() {
                 OpPush::CODE => {
                     let arg = Argument::decode(&mut data).unwrap();
-                    args_stack.push(OpPush::handler(arg));
+
+                    OpPush::handler(arg).encode_arguments(&mut args_stack);
                 }
                 OpEql::CODE => {
-                    let arg1 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
-                    let arg2 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let args = <OpEql as OpCode>::Args::decode_arguments(&mut args_stack)
+                        .map_err(|e| ScriptError::InvalidArguments(e))?;
 
-                    let res = OpEql::handler((arg1, arg2));
-                    args_stack.push(Argument::new().set_value_chain(res));
+                    OpEql::handler(args).encode_arguments(&mut args_stack);
                 }
                 OpNql::CODE => {
-                    let arg1 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
-                    let arg2 = args_stack.pop().ok_or(ScriptError::InvalidArgumentAmount)?;
+                    let args = <OpNql as OpCode>::Args::decode_arguments(&mut args_stack)
+                        .map_err(|e| ScriptError::InvalidArguments(e))?;
 
-                    let res = OpNql::handler((arg1, arg2));
-                    args_stack.push(Argument::new().set_value_chain(res));
+                    OpNql::handler(args).encode_arguments(&mut args_stack);
                 }
                 OpAdd::CODE => {
-                    let arg1 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .get_value()
-                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-                    let arg2 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .get_value()
-                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+                    let args = <OpAdd as OpCode>::Args::decode_arguments(&mut args_stack)
+                        .map_err(|e| ScriptError::InvalidArguments(e))?;
 
-                    let res = OpAdd::handler((arg1, arg2));
-                    args_stack.push(Argument::new().set_value_chain(res));
+                    OpAdd::handler(args).encode_arguments(&mut args_stack);
                 }
                 OpSub::CODE => {
-                    let arg1 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .get_value()
-                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
-                    let arg2 = args_stack
-                        .pop()
-                        .ok_or(ScriptError::InvalidArgumentAmount)?
-                        .get_value()
-                        .map_err(|_| ScriptError::UnexepectedArgumentType)?;
+                    let args = <OpSub as OpCode>::Args::decode_arguments(&mut args_stack)
+                        .map_err(|e| ScriptError::InvalidArguments(e))?;
 
-                    let res = OpSub::handler((arg1, arg2));
-                    args_stack.push(Argument::new().set_value_chain(res));
+                    OpSub::handler(args).encode_arguments(&mut args_stack);
                 }
                 code => return Err(ScriptError::UnknownOpCode(code)),
             }

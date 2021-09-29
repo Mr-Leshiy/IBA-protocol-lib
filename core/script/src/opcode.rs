@@ -9,8 +9,8 @@ pub enum OpCodeError {
 }
 
 pub trait OpCode {
-    type Args: Encode + Decode;
-    type Res: Encode + Decode;
+    type Args: OpCodeVal;
+    type Res: OpCodeVal;
     const CODE: u32;
 
     fn handler(args: Self::Args) -> Self::Res;
@@ -23,6 +23,10 @@ pub trait OpCodeVal: Sized + Encode + Decode {
             .ok_or(OpCodeError::InvalidArgumentAmount)?
             .get_value()
             .map_err(|_| OpCodeError::UnexepectedArgumentType)?)
+    }
+
+    fn encode_arguments(self, args_stack: &mut Vec<Argument>) {
+        Argument::new().set_value(self);
     }
 }
 
@@ -40,11 +44,25 @@ impl OpCodeVal for i128 {}
 
 impl OpCodeVal for bool {}
 
+impl OpCodeVal for Argument {
+    fn decode_arguments(args_stack: &mut Vec<Argument>) -> Result<Self, OpCodeError> {
+        args_stack.pop().ok_or(OpCodeError::InvalidArgumentAmount)
+    }
+
+    fn encode_arguments(self, args_stack: &mut Vec<Argument>) {
+        args_stack.push(self);
+    }
+}
+
 #[impl_for_tuples(15)]
 impl OpCodeVal for Tuple {
     fn decode_arguments(args_stack: &mut Vec<Argument>) -> Result<Self, OpCodeError> {
         let res = for_tuples!( ( #( Tuple::decode_arguments(args_stack)? ), *) );
         Ok(res)
+    }
+
+    fn encode_arguments(self, args_stack: &mut Vec<Argument>) {
+        for_tuples!( #( Tuple.encode_arguments(args_stack); )* );
     }
 }
 

@@ -6,6 +6,6 @@ mod tests {
     #[test]
     fn eval_test() {
         let script = default_script();
-        eval!(script, OpAdd{});
+        eval!(script, OpAdd {});
     }
 }
