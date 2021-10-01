@@ -1,6 +1,6 @@
 use argument::*;
 use opcode::*;
-use parity_scale_codec::{Decode, Encode, Input};
+use parity_scale_codec::{Decode, Encode};
 
 pub mod argument;
 pub mod opcode;
@@ -11,34 +11,28 @@ pub struct Script {
 }
 
 impl Script {
-    // FIXME remove #[allow(dead_code)]
-    #[allow(dead_code)]
     pub fn new() -> Self {
         Self { data: Vec::new() }
     }
 
-    // FIXME remove #[allow(dead_code)]
-    #[allow(dead_code)]
-    fn push_argument(&mut self, arg: &Argument) {
+    pub fn push_argument(&mut self, arg: &Argument) {
         self.data.append(&mut arg.to_script());
     }
 
-    // FIXME remove #[allow(dead_code)]
-    #[allow(dead_code)]
-    fn push_op_code<Op: OpCode>(&mut self) {
+    pub fn push_op_code<Op: OpCode>(&mut self) {
         self.data.append(&mut Op::CODE.encode());
     }
 
     // FIXME remove #[allow(dead_code)]
     #[allow(dead_code)]
-    fn push_argument_chain(mut self, arg: &Argument) -> Self {
+    pub fn push_argument_chain(mut self, arg: &Argument) -> Self {
         self.data.append(&mut arg.to_script());
         self
     }
 
     // FIXME remove #[allow(dead_code)]
     #[allow(dead_code)]
-    fn push_op_code_chain<Op: OpCode>(mut self) -> Self {
+    pub fn push_op_code_chain<Op: OpCode>(mut self) -> Self {
         self.data.append(&mut Op::CODE.encode());
         self
     }
@@ -54,56 +48,6 @@ pub enum ScriptError {
     InvalidArguments(OpCodeError),
 }
 
-impl Script {
-    pub fn evaluate(&self) -> Result<Option<Argument>, ScriptError> {
-        let f = || {
-            let data = self.get_data();
-            let mut data = data.as_slice();
-
-            let mut args_stack = Vec::new();
-
-            // while not end of the stream
-            while data.remaining_len() != Ok(Some(0)) {
-                match u32::decode(&mut data).unwrap() {
-                    OpPush::CODE => {
-                        let arg = Argument::decode(&mut data).unwrap();
-
-                        OpPush::handler(arg).encode_arguments(&mut args_stack);
-                    }
-                    OpEql::CODE => {
-                        let args = <OpEql as OpCode>::Args::decode_arguments(&mut args_stack)
-                            .map_err(ScriptError::InvalidArguments)?;
-
-                        OpEql::handler(args).encode_arguments(&mut args_stack);
-                    }
-                    OpNql::CODE => {
-                        let args = <OpNql as OpCode>::Args::decode_arguments(&mut args_stack)
-                            .map_err(ScriptError::InvalidArguments)?;
-
-                        OpNql::handler(args).encode_arguments(&mut args_stack);
-                    }
-                    OpAdd::CODE => {
-                        let args = <OpAdd as OpCode>::Args::decode_arguments(&mut args_stack)
-                            .map_err(ScriptError::InvalidArguments)?;
-
-                        OpAdd::handler(args).encode_arguments(&mut args_stack);
-                    }
-                    OpSub::CODE => {
-                        let args = <OpSub as OpCode>::Args::decode_arguments(&mut args_stack)
-                            .map_err(ScriptError::InvalidArguments)?;
-
-                        OpSub::handler(args).encode_arguments(&mut args_stack);
-                    }
-                    code => return Err(ScriptError::UnknownOpCode(code)),
-                }
-            }
-
-            Ok(args_stack.pop())
-        };
-        f()
-    }
-}
-
 pub mod tests {
     use super::*;
 
@@ -113,95 +57,5 @@ pub mod tests {
             .push_argument_chain(&Argument::new().set_value_chain(2_u64))
             .push_argument_chain(&Argument::new().set_value_chain(3_u64))
             .push_argument_chain(&Argument::new().set_value_chain(4_u64))
-    }
-
-    #[test]
-    fn op_add_test() {
-        let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6_u64));
-
-        script.push_argument(&Argument::new().set_value_chain(5_u64));
-        script.push_op_code::<OpAdd>();
-
-        assert_eq!(
-            script.evaluate().unwrap().unwrap().get_value::<u64>(),
-            Ok(11)
-        );
-    }
-
-    #[test]
-    fn op_sub_test() {
-        let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6_u64));
-        script.push_argument(&Argument::new().set_value_chain(5_u64));
-        script.push_op_code::<OpSub>();
-
-        assert_eq!(
-            script.evaluate().unwrap().unwrap().get_value::<u64>(),
-            Ok(1)
-        );
-    }
-
-    #[test]
-    fn op_eql_test() {
-        let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6_u64));
-        script.push_argument(&Argument::new().set_value_chain(6_u64));
-        script.push_op_code::<OpEql>();
-
-        assert_eq!(
-            script.evaluate().unwrap().unwrap().get_value::<bool>(),
-            Ok(true)
-        );
-
-        let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6_u64));
-        script.push_argument(&Argument::new().set_value_chain(5_u64));
-        script.push_op_code::<OpEql>();
-
-        assert_eq!(
-            script.evaluate().unwrap().unwrap().get_value::<bool>(),
-            Ok(false)
-        );
-    }
-
-    #[test]
-    fn op_nql_test() {
-        let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6_u64));
-        script.push_argument(&Argument::new().set_value_chain(5_u64));
-        script.push_op_code::<OpNql>();
-
-        assert_eq!(
-            script.evaluate().unwrap().unwrap().get_value::<bool>(),
-            Ok(true)
-        );
-
-        let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6_u64));
-        script.push_argument(&Argument::new().set_value_chain(6_u64));
-        script.push_op_code::<OpNql>();
-
-        assert_eq!(
-            script.evaluate().unwrap().unwrap().get_value::<bool>(),
-            Ok(false)
-        );
-    }
-
-    #[test]
-    fn script_test() {
-        let mut script = Script::new();
-        script.push_argument(&Argument::new().set_value_chain(6_u64));
-        script.push_argument(&Argument::new().set_value_chain(8_u64));
-        script.push_op_code::<OpAdd>();
-        script.push_argument(&Argument::new().set_value_chain(12_u64));
-        script.push_op_code::<OpSub>();
-        script.push_argument(&Argument::new().set_value_chain(2_u64));
-        script.push_op_code::<OpEql>();
-
-        assert_eq!(
-            script.evaluate().unwrap().unwrap().get_value::<bool>(),
-            Ok(true)
-        );
     }
 }
