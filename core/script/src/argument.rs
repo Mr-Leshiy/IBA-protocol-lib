@@ -18,11 +18,11 @@ impl Argument {
         data
     }
 
-    pub fn set_value<T: Encode>(&mut self, val: T) {
+    pub fn set_value<T: Encode>(&mut self, val: &T) {
         self.data = val.encode();
     }
 
-    pub fn set_value_chain<T: Encode>(mut self, val: T) -> Self {
+    pub fn set_value_chain<T: Encode>(mut self, val: &T) -> Self {
         self.data = val.encode();
         self
     }

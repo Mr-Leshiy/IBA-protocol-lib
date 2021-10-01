@@ -1,9 +1,39 @@
-use argument::*;
 use opcode::*;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode, Error};
 
 pub mod argument;
 pub mod opcode;
+
+#[derive(Decode, Encode, PartialEq, Clone, Default, Debug)]
+pub struct ScriptValue {
+    data: Vec<u8>,
+}
+
+impl ScriptValue {
+    pub fn new() -> Self {
+        Self { data: Vec::new() }
+    }
+
+    pub fn to_script(&self) -> Vec<u8> {
+        let mut data = Vec::new();
+        data.append(&mut OpPush::CODE.encode());
+        data.append(&mut self.encode());
+        data
+    }
+
+    pub fn set_value<T: Encode>(&mut self, val: &T) {
+        self.data = val.encode();
+    }
+
+    pub fn set_value_chain<T: Encode>(mut self, val: &T) -> Self {
+        self.data = val.encode();
+        self
+    }
+
+    pub fn get_value<T: Decode>(&self) -> Result<T, Error> {
+        T::decode(&mut self.data.as_ref())
+    }
+}
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, Debug)]
 pub struct Script {
@@ -15,8 +45,9 @@ impl Script {
         Self { data: Vec::new() }
     }
 
-    pub fn push_argument(&mut self, arg: &Argument) {
-        self.data.append(&mut arg.to_script());
+    pub fn push_value<T: Encode>(&mut self, val: &T) {
+        let val = ScriptValue::new().set_value_chain(val);
+        self.data.append(&mut val.to_script());
     }
 
     pub fn push_op_code<Op: OpCode>(&mut self) {
@@ -25,8 +56,9 @@ impl Script {
 
     // FIXME remove #[allow(dead_code)]
     #[allow(dead_code)]
-    pub fn push_argument_chain(mut self, arg: &Argument) -> Self {
-        self.data.append(&mut arg.to_script());
+    pub fn push_value_chain<T: Encode>(mut self, val: &T) -> Self {
+        let val = ScriptValue::new().set_value_chain(val);
+        self.data.append(&mut val.to_script());
         self
     }
 
@@ -37,6 +69,7 @@ impl Script {
         self
     }
 
+    // TODO: remove this, implement parity_scale_codec::Input trait
     pub fn get_data(&self) -> Vec<u8> {
         self.data.clone()
     }
@@ -53,9 +86,9 @@ pub mod tests {
 
     pub fn default_script() -> Script {
         Script::new()
-            .push_argument_chain(&Argument::new().set_value_chain(1_u64))
-            .push_argument_chain(&Argument::new().set_value_chain(2_u64))
-            .push_argument_chain(&Argument::new().set_value_chain(3_u64))
-            .push_argument_chain(&Argument::new().set_value_chain(4_u64))
+            .push_value_chain(&1_u64)
+            .push_value_chain(&2_u64)
+            .push_value_chain(&3_u64)
+            .push_value_chain(&4_u64)
     }
 }

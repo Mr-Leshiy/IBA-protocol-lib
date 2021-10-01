@@ -25,7 +25,7 @@ pub trait OpCodeVal: Sized + Encode + Decode {
             .map_err(|_| OpCodeError::UnexepectedArgumentType)
     }
 
-    fn encode_arguments(self, args_stack: &mut Vec<Argument>) {
+    fn encode_arguments(&self, args_stack: &mut Vec<Argument>) {
         args_stack.push(Argument::new().set_value_chain(self));
     }
 }
@@ -49,8 +49,8 @@ impl OpCodeVal for Argument {
         args_stack.pop().ok_or(OpCodeError::InvalidArgumentAmount)
     }
 
-    fn encode_arguments(self, args_stack: &mut Vec<Argument>) {
-        args_stack.push(self);
+    fn encode_arguments(&self, args_stack: &mut Vec<Argument>) {
+        args_stack.push(self.clone());
     }
 }
 
@@ -61,7 +61,7 @@ impl OpCodeVal for Tuple {
         Ok(res)
     }
 
-    fn encode_arguments(self, args_stack: &mut Vec<Argument>) {
+    fn encode_arguments(&self, args_stack: &mut Vec<Argument>) {
         for_tuples!( #( Tuple.encode_arguments(args_stack); )* );
     }
 }
@@ -74,8 +74,8 @@ mod tests {
     fn decode_arguments_test() {
         let mut args = Vec::new();
 
-        args.push(Argument::new().set_value_chain(5_u64));
-        args.push(Argument::new().set_value_chain(11_u64));
+        args.push(Argument::new().set_value_chain(&5_u64));
+        args.push(Argument::new().set_value_chain(&11_u64));
 
         let (val1, val2) = <(u64, u64)>::decode_arguments(&mut args).unwrap();
         assert_eq!(val1, 11_u64);
