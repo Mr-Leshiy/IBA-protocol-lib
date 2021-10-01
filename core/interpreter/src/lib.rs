@@ -49,7 +49,7 @@ fn interpret_impl(script: ScriptDefinition) -> TokenStream2 {
                 while data.remaining_len() != Ok(Some(0)) {
                     match u32::decode(&mut data).unwrap() {
                         OpPush::CODE => {
-                            let arg = script::argument::Argument::decode(&mut data).unwrap();
+                            let arg = script::ScriptValue::decode(&mut data).unwrap();
 
                             OpPush::handler(arg).encode_arguments(&mut args_stack);
                         }

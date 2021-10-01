@@ -1,7 +1,6 @@
 use opcode::*;
 use parity_scale_codec::{Decode, Encode, Error};
 
-pub mod argument;
 pub mod opcode;
 
 #[derive(Decode, Encode, PartialEq, Clone, Default, Debug)]
