@@ -20,7 +20,7 @@ mod tests {
             }
         }
 
-        let script = default_script();
+        let mut script = default_script();
         interpret!(script, OpTest {}).unwrap();
     }
 

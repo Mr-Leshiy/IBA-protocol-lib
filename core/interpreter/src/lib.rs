@@ -35,21 +35,17 @@ fn interpret_impl(script: ScriptDefinition) -> TokenStream2 {
 
     let interpret_decl = quote! {
         {
-            let f = || {
-                use parity_scale_codec::{Decode, Encode, Input};
+            let mut f = || {
                 use script::opcode::*;
                 use script::*;
 
-                let data = #script_decl.get_data();
-                let mut data = data.as_slice();
-
                 let mut args_stack = Vec::new();
 
-                // // while not end of the stream
-                while data.remaining_len() != Ok(Some(0)) {
-                    match u32::decode(&mut data).unwrap() {
+                // while end of the stream
+                while let Some(code) = #script_decl.try_next_opcode()? {
+                    match code {
                         OpPush::CODE => {
-                            let arg = script::ScriptValue::decode(&mut data).unwrap();
+                            let arg = #script_decl.try_next_value()?.unwrap();
 
                             OpPush::handler(arg).encode_arguments(&mut args_stack);
                         }
