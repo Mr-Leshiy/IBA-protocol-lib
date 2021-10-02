@@ -86,16 +86,31 @@ mod tests {
 
     #[test]
     fn interpret_test() {
+        struct OpSquared {}
+        impl OpCode for OpSquared {
+            const CODE: u32 = 10;
+            type Args = u64;
+            type Res = u64;
+
+            fn handler(arg: Self::Args) -> Self::Res {
+                arg * arg
+            }
+        }
+
         let mut script = Script::new();
         script.push_value(&6_u64);
         script.push_value(&8_u64);
         script.push_op_code::<OpAdd>();
         script.push_value(&12_u64);
         script.push_op_code::<OpSub>();
-        script.push_value(&2_u64);
+        script.push_op_code::<OpSquared>();
+        script.push_value(&4_u64);
         script.push_op_code::<OpEql>();
 
-        let res = interpret!(script).unwrap().unwrap().get_value::<bool>();
+        let res = interpret!(script, OpSquared {})
+            .unwrap()
+            .unwrap()
+            .get_value::<bool>();
         assert_eq!(res, Ok(true));
     }
 }
