@@ -37,7 +37,7 @@ fn interpret_impl(script: ScriptDefinition) -> TokenStream2 {
         {
             let mut f = || {
                 use script::opcode::*;
-                use script::*;
+                use script::ScriptError;
 
                 let mut args_stack = Vec::new();
 
