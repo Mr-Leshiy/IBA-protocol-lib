@@ -1,4 +1,4 @@
-use crate::argument::Argument;
+use crate::ScriptValue;
 use impl_trait_for_tuples::impl_for_tuples;
 use parity_scale_codec::{Decode, Encode};
 
@@ -17,7 +17,7 @@ pub trait OpCode {
 }
 
 pub trait OpCodeVal: Sized + Encode + Decode {
-    fn decode_arguments(args_stack: &mut Vec<Argument>) -> Result<Self, OpCodeError> {
+    fn decode_arguments(args_stack: &mut Vec<ScriptValue>) -> Result<Self, OpCodeError> {
         args_stack
             .pop()
             .ok_or(OpCodeError::InvalidArgumentAmount)?
@@ -25,8 +25,8 @@ pub trait OpCodeVal: Sized + Encode + Decode {
             .map_err(|_| OpCodeError::UnexepectedArgumentType)
     }
 
-    fn encode_arguments(self, args_stack: &mut Vec<Argument>) {
-        args_stack.push(Argument::new().set_value_chain(self));
+    fn encode_arguments(&self, args_stack: &mut Vec<ScriptValue>) {
+        args_stack.push(ScriptValue::new().set_value_chain(self));
     }
 }
 
@@ -44,24 +44,24 @@ impl OpCodeVal for i128 {}
 
 impl OpCodeVal for bool {}
 
-impl OpCodeVal for Argument {
-    fn decode_arguments(args_stack: &mut Vec<Argument>) -> Result<Self, OpCodeError> {
+impl OpCodeVal for ScriptValue {
+    fn decode_arguments(args_stack: &mut Vec<ScriptValue>) -> Result<Self, OpCodeError> {
         args_stack.pop().ok_or(OpCodeError::InvalidArgumentAmount)
     }
 
-    fn encode_arguments(self, args_stack: &mut Vec<Argument>) {
-        args_stack.push(self);
+    fn encode_arguments(&self, args_stack: &mut Vec<ScriptValue>) {
+        args_stack.push(self.clone());
     }
 }
 
 #[impl_for_tuples(15)]
 impl OpCodeVal for Tuple {
-    fn decode_arguments(args_stack: &mut Vec<Argument>) -> Result<Self, OpCodeError> {
+    fn decode_arguments(args_stack: &mut Vec<ScriptValue>) -> Result<Self, OpCodeError> {
         let res = for_tuples!( ( #( Tuple::decode_arguments(args_stack)? ), *) );
         Ok(res)
     }
 
-    fn encode_arguments(self, args_stack: &mut Vec<Argument>) {
+    fn encode_arguments(&self, args_stack: &mut Vec<ScriptValue>) {
         for_tuples!( #( Tuple.encode_arguments(args_stack); )* );
     }
 }
@@ -74,8 +74,8 @@ mod tests {
     fn decode_arguments_test() {
         let mut args = Vec::new();
 
-        args.push(Argument::new().set_value_chain(5_u64));
-        args.push(Argument::new().set_value_chain(11_u64));
+        args.push(ScriptValue::new().set_value_chain(&5_u64));
+        args.push(ScriptValue::new().set_value_chain(&11_u64));
 
         let (val1, val2) = <(u64, u64)>::decode_arguments(&mut args).unwrap();
         assert_eq!(val1, 11_u64);
@@ -90,8 +90,8 @@ pub struct OpAdd;
 pub struct OpSub;
 
 impl OpCode for OpPush {
-    type Args = Argument;
-    type Res = Argument;
+    type Args = ScriptValue;
+    type Res = ScriptValue;
     const CODE: u32 = 0;
 
     fn handler(args: Self::Args) -> Self::Res {
@@ -100,7 +100,7 @@ impl OpCode for OpPush {
 }
 
 impl OpCode for OpEql {
-    type Args = (Argument, Argument);
+    type Args = (ScriptValue, ScriptValue);
     type Res = bool;
     const CODE: u32 = 1;
 
@@ -110,7 +110,7 @@ impl OpCode for OpEql {
 }
 
 impl OpCode for OpNql {
-    type Args = (Argument, Argument);
+    type Args = (ScriptValue, ScriptValue);
     type Res = bool;
     const CODE: u32 = 2;
 
