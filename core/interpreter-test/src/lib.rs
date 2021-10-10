@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use interpreter::interpret;
+    use interpreter::gen_interpreter;
     use script::{
         opcode::{OpAdd, OpCode, OpEql, OpSub},
         tests::default_script,
@@ -21,7 +21,8 @@ mod tests {
         }
 
         let mut script = default_script();
-        interpret!(script, OpTest {}).unwrap();
+        let interpret = gen_interpreter!(OpTest {});
+        interpret(&mut script).unwrap();
     }
 
     #[test]
@@ -31,7 +32,8 @@ mod tests {
         script.push_value(&5_u64);
         script.push_op_code::<OpAdd>();
 
-        let res = interpret!(script).unwrap().unwrap().get_value::<u64>();
+        let interpret = gen_interpreter!();
+        let res = interpret(&mut script).unwrap().unwrap().get_value::<u64>();
         assert_eq!(res, Ok(11));
     }
 
@@ -42,7 +44,8 @@ mod tests {
         script.push_value(&5_u64);
         script.push_op_code::<OpSub>();
 
-        let res = interpret!(script).unwrap().unwrap().get_value::<u64>();
+        let interpret = gen_interpreter!();
+        let res = interpret(&mut script).unwrap().unwrap().get_value::<u64>();
         assert_eq!(res, Ok(1));
     }
 
@@ -53,7 +56,8 @@ mod tests {
         script.push_value(&6_u64);
         script.push_op_code::<OpEql>();
 
-        let res = interpret!(script).unwrap().unwrap().get_value::<bool>();
+        let interpret = gen_interpreter!();
+        let res = interpret(&mut script).unwrap().unwrap().get_value::<bool>();
         assert_eq!(res, Ok(true));
 
         let mut script = Script::new();
@@ -61,7 +65,8 @@ mod tests {
         script.push_value(&5_u64);
         script.push_op_code::<OpEql>();
 
-        let res = interpret!(script).unwrap().unwrap().get_value::<bool>();
+        let interpret = gen_interpreter!();
+        let res = interpret(&mut script).unwrap().unwrap().get_value::<bool>();
         assert_eq!(res, Ok(false));
     }
 
@@ -72,7 +77,8 @@ mod tests {
         script.push_value(&6_u64);
         script.push_op_code::<OpEql>();
 
-        let res = interpret!(script).unwrap().unwrap().get_value::<bool>();
+        let interpret = gen_interpreter!();
+        let res = interpret(&mut script).unwrap().unwrap().get_value::<bool>();
         assert_eq!(res, Ok(true));
 
         let mut script = Script::new();
@@ -80,7 +86,8 @@ mod tests {
         script.push_value(&5_u64);
         script.push_op_code::<OpEql>();
 
-        let res = interpret!(script).unwrap().unwrap().get_value::<bool>();
+        let interpret = gen_interpreter!();
+        let res = interpret(&mut script).unwrap().unwrap().get_value::<bool>();
         assert_eq!(res, Ok(false));
     }
 
@@ -107,10 +114,8 @@ mod tests {
         script.push_value(&4_u64);
         script.push_op_code::<OpEql>();
 
-        let res = interpret!(script, OpSquared {})
-            .unwrap()
-            .unwrap()
-            .get_value::<bool>();
+        let interpret = gen_interpreter!(OpSquared {});
+        let res = interpret(&mut script).unwrap().unwrap().get_value::<bool>();
         assert_eq!(res, Ok(true));
     }
 }
