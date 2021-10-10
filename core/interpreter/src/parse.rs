@@ -17,24 +17,19 @@ impl Parse for OpCodeDefinition {
 }
 
 pub struct ScriptDefinition {
-    pub name: Ident,
     pub op_codes: Punctuated<OpCodeDefinition, Token![,]>,
 }
 
 impl Parse for ScriptDefinition {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        // parse the name of the variable
-        let name = input.parse()?;
         // parse ',' identifier if present
-        match input.parse::<Option<Token![,]>>()? {
+        match input.is_empty() {
             // parse op_codes
-            Some(_) => Ok(Self {
-                name,
+            false => Ok(Self {
                 op_codes: Punctuated::parse_separated_nonempty(input)?,
             }),
             // initialize with the empty op_codes
-            None => Ok(Self {
-                name,
+            true => Ok(Self {
                 op_codes: Punctuated::new(),
             }),
         }

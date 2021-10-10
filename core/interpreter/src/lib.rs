@@ -8,9 +8,9 @@ use quote::quote;
 mod parse;
 
 #[proc_macro]
-pub fn interpret(input: TokenStream) -> TokenStream {
+pub fn gen_interpreter(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
-    interpret_impl(ast).into()
+    gen_interpreter_impl(ast).into()
 }
 
 fn decl_op_codes(op_codes: impl Iterator<Item = OpCodeDefinition>) -> TokenStream2 {
@@ -28,24 +28,22 @@ fn decl_op_codes(op_codes: impl Iterator<Item = OpCodeDefinition>) -> TokenStrea
     })
 }
 
-fn interpret_impl(script: ScriptDefinition) -> TokenStream2 {
+fn gen_interpreter_impl(script: ScriptDefinition) -> TokenStream2 {
     let op_codes_decl = decl_op_codes(script.op_codes.into_iter());
-
-    let script_decl = script.name;
 
     let interpret_decl = quote! {
         {
-            let mut f = || {
+             |script: &mut script::Script| {
                 use script::opcode::*;
                 use script::ScriptError;
 
                 let mut args_stack = Vec::new();
 
                 // while end of the stream
-                while let Some(code) = #script_decl.try_next_opcode()? {
+                while let Some(code) = script.try_next_opcode()? {
                     match code {
                         OpPush::CODE => {
-                            let arg = #script_decl.try_next_value()?.unwrap();
+                            let arg = script.try_next_value()?.unwrap();
 
                             OpPush::handler(arg).encode_arguments(&mut args_stack);
                         }
@@ -82,8 +80,7 @@ fn interpret_impl(script: ScriptDefinition) -> TokenStream2 {
                     }
                 }
                 Ok(args_stack.pop())
-            };
-            f()
+            }
         }
     };
     interpret_decl
