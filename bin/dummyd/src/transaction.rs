@@ -1,4 +1,6 @@
+use interpreter::gen_interpreter;
 use parity_scale_codec::{Decode, Encode};
+use script::opcode::OpCode;
 use sha2::{Digest, Sha256};
 use std::{
     convert::TryInto,
@@ -17,24 +19,34 @@ pub struct Transaction {
     lib_tx: IbaTransaction,
 }
 
+struct OpEcho;
+
+impl OpCode for OpEcho {
+    type Args = ();
+    type Res = ();
+    const CODE: u32 = 5;
+
+    fn handler(_args: Self::Args) -> Self::Res {
+        println!("OpEcho !!!");
+    }
+}
+
 impl Transaction {
     pub fn hash(&self) -> [u8; 32] {
         self.lib_tx.hash()
     }
 
     pub fn execute(&self) -> Result<(), TransactionError> {
-        // match self
-        //     .lib_tx
-        //     .executed_script()
-        //     .evaluate()
-        //     .map_err(TransactionError::InvalidScript)?
-        // {
-        //     Some(arg) => Ok(arg
-        //         .get_value::<()>()
-        //         .map_err(|_| TransactionError::InvalidEvaluation)?),
-        //     _ => Err(TransactionError::InvalidEvaluation),
-        // }
-        Ok(())
+        let mut script = self.lib_tx.executed_script().clone();
+
+        let interpret = gen_interpreter!();
+
+        match interpret(&mut script).map_err(|_| TransactionError::InvalidScript)? {
+            Some(res) => res
+                .get_value::<()>()
+                .map_err(|_| TransactionError::InvalidEvaluation),
+            None => Err(TransactionError::InvalidEvaluation),
+        }
     }
 }
 

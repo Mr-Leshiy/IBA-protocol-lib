@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 parity-scale-codec = { default-features = false, version = "2.2.0", features = ["derive"] }
 sha2 = { default-features = false, version = "0.9.6" }
-script = { version = "0.1.0", path = "../script" }
+script = { path = "../script" }
 
 [dev-dependencies]
 hex = { version = "0.4.3" }
