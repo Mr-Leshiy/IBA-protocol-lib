@@ -17,7 +17,8 @@ impl Blockchain {
     pub fn run(&mut self) {
         println!("Running blockchain");
 
-        println!("genesis: {}", self.active_chain.genesis());
+        println!("genesis: {}\n", self.active_chain.genesis());
+        println!("-------------");
 
         loop {
             // TODO: take transactions from the mempool
@@ -33,8 +34,9 @@ impl Blockchain {
                     self.active_chain.set_tip(new_block).unwrap();
                     println!("new tip: {} \n", self.active_chain.tip());
                 }
-                Err(err) => println!("block: {}, is invalid, err: {:?}", new_block, &err),
+                Err(err) => println!("block: {}, is invalid, err: {:?}\n", new_block, &err),
             }
+            println!("-------------");
         }
     }
 }
