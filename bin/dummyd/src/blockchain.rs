@@ -1,4 +1,7 @@
-use crate::{block::Block, chain::Chain, execution::execute_block, miner::generate_block};
+use crate::{
+    block::Block, chain::Chain, execution::execute_block, miner::generate_block,
+    transaction::Transaction,
+};
 
 pub struct Blockchain {
     active_chain: Chain,
@@ -17,7 +20,11 @@ impl Blockchain {
         println!("genesis: {}", self.active_chain.genesis());
 
         loop {
-            let new_block = generate_block(self.active_chain.tip(), Vec::new());
+            // TODO: take transactions from the mempool
+            // TODO: provide a current timestamp
+            let tx = Transaction::new(0);
+
+            let new_block = generate_block(self.active_chain.tip(), vec![tx]);
             println!("mining new block: {} \n", new_block);
 
             println!("executing block: {} \n", new_block);
@@ -26,7 +33,7 @@ impl Blockchain {
                     self.active_chain.set_tip(new_block).unwrap();
                     println!("new tip: {} \n", self.active_chain.tip());
                 }
-                Err(err) => println!("block: {}, is invalid, err: {}", new_block, &err),
+                Err(err) => println!("block: {}, is invalid, err: {:?}", new_block, &err),
             }
         }
     }

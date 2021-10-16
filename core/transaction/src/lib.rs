@@ -14,6 +14,20 @@ pub struct Transaction {
 }
 
 impl Transaction {
+    pub fn new(
+        version: u32,
+        timestamp: u64,
+        executed_script: Script,
+        condition_script: Script,
+    ) -> Self {
+        Self {
+            version,
+            timestamp,
+            executed_script,
+            condition_script,
+        }
+    }
+
     /// Calculates a Sha256 hash of the function
     pub fn hash(&self) -> [u8; 32] {
         Sha256::new()

@@ -68,16 +68,12 @@ impl Script {
         self.data.append(&mut Op::CODE.encode());
     }
 
-    // FIXME remove #[allow(dead_code)]
-    #[allow(dead_code)]
     pub fn push_value_chain<T: Encode>(mut self, val: &T) -> Self {
         let val = ScriptValue::new().set_value_chain(val);
         self.data.append(&mut val.to_script());
         self
     }
 
-    // FIXME remove #[allow(dead_code)]
-    #[allow(dead_code)]
     pub fn push_op_code_chain<Op: OpCode>(mut self) -> Self {
         self.data.append(&mut Op::CODE.encode());
         self

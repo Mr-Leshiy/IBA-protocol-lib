@@ -42,6 +42,18 @@ impl OpCodeVal for i32 {}
 impl OpCodeVal for i64 {}
 impl OpCodeVal for i128 {}
 
+impl OpCodeVal for Vec<u8> {}
+impl OpCodeVal for Vec<u16> {}
+impl OpCodeVal for Vec<u32> {}
+impl OpCodeVal for Vec<u64> {}
+impl OpCodeVal for Vec<u128> {}
+
+impl OpCodeVal for Vec<i8> {}
+impl OpCodeVal for Vec<i16> {}
+impl OpCodeVal for Vec<i32> {}
+impl OpCodeVal for Vec<i64> {}
+impl OpCodeVal for Vec<i128> {}
+
 impl OpCodeVal for bool {}
 
 impl OpCodeVal for ScriptValue {
