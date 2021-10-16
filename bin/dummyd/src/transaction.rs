@@ -1,6 +1,6 @@
 use interpreter::gen_interpreter;
 use parity_scale_codec::{Decode, Encode};
-use script::{opcode::OpCode, Script};
+use script::{opcode::OpCode, Script, ScriptError};
 use sha2::{Digest, Sha256};
 use std::{
     convert::TryInto,
@@ -8,9 +8,25 @@ use std::{
 };
 use transaction::Transaction as IbaTransaction;
 
+pub struct TransactionError {
+    tx_hash: [u8; 32],
+    err_type: TransactionErrorType,
+}
+
+impl Debug for TransactionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "tx hash: {}, err: {:?}",
+            hex::encode(self.tx_hash),
+            self.err_type
+        )
+    }
+}
+
 #[derive(Debug)]
-pub enum TransactionError {
-    InvalidScript,
+pub enum TransactionErrorType {
+    InvalidScript(ScriptError),
     InvalidEvaluation,
 }
 
@@ -27,7 +43,7 @@ impl OpCode for OpEcho {
     const CODE: u32 = 5;
 
     fn handler(_args: Self::Args) -> Self::Res {
-        println!("OpEcho !!!");
+        println!("OpEcho !!! \n");
     }
 }
 
@@ -51,12 +67,15 @@ impl Transaction {
 
         let interpret = gen_interpreter!(OpEcho {});
 
-        // TODO: process error from from the script execution
-        match interpret(&mut script).map_err(|_| TransactionError::InvalidScript)? {
-            Some(res) => res
-                .get_value::<()>()
-                .map_err(|_| TransactionError::InvalidEvaluation),
-            None => Err(TransactionError::InvalidEvaluation),
+        match interpret(&mut script).map_err(|err| TransactionError {
+            tx_hash: self.hash(),
+            err_type: TransactionErrorType::InvalidScript(err),
+        })? {
+            Some(_) => Err(TransactionError {
+                tx_hash: self.hash(),
+                err_type: TransactionErrorType::InvalidEvaluation,
+            }),
+            None => Ok(()),
         }
     }
 }

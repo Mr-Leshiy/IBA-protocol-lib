@@ -3,6 +3,7 @@ use parity_scale_codec::{Decode, Encode, Error, Input};
 
 pub mod opcode;
 
+// TODO: make ScriptValue private
 #[derive(Decode, Encode, PartialEq, Clone, Default, Debug)]
 pub struct ScriptValue {
     data: Vec<u8>,
