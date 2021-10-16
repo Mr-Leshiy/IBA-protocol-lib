@@ -5,5 +5,5 @@ members = [
     "core/interpreter-test",
     "core/transaction",
     "network",
-    "bin/dummyd",
+    "bin/mockchain",
 ]
