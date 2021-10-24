@@ -1,7 +1,6 @@
-mod behaviour;
-mod handler;
+mod libp2p_impl;
 
-pub use handler::build_handler;
+pub use libp2p_impl::handler::build_handler;
 
 use async_std::channel::{self, Receiver, SendError, Sender};
 use futures::{Stream, StreamExt};
@@ -16,6 +15,8 @@ mod tests;
 
 pub trait NetworkHandlerTrait: Stream + Unpin {
     fn broadcast_msg(&mut self, msg: Vec<u8>);
+
+    fn receive_msg(&mut self, msg: Vec<u8>);
 }
 
 pub struct NetworkWorker<NetworkHandler: NetworkHandlerTrait> {

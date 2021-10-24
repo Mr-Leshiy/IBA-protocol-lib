@@ -2,15 +2,17 @@ use crate::*;
 
 // mock of NetworkHandlerTrait
 struct NetworkHandlerTest<'a> {
-    pub received_msg: &'a mut Vec<Vec<u8>>,
+    pub broadcasted_msg: &'a mut Vec<Vec<u8>>,
 }
 
 impl<'a> Unpin for NetworkHandlerTest<'a> {}
 
 impl<'a> NetworkHandlerTrait for NetworkHandlerTest<'a> {
     fn broadcast_msg(&mut self, msg: Vec<u8>) {
-        self.received_msg.push(msg);
+        self.broadcasted_msg.push(msg);
     }
+
+    fn receive_msg(&mut self, _: Vec<u8>) {}
 }
 
 impl<'a> futures::Stream for NetworkHandlerTest<'a> {
@@ -23,10 +25,10 @@ impl<'a> futures::Stream for NetworkHandlerTest<'a> {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn basic_test() {
-    static mut RECEIVED_MSG: Vec<Vec<u8>> = Vec::new();
+    static mut BROADCASTED_MSG: Vec<Vec<u8>> = Vec::new();
     unsafe {
         let handler = NetworkHandlerTest {
-            received_msg: &mut RECEIVED_MSG,
+            broadcasted_msg: &mut BROADCASTED_MSG,
         };
 
         let (mut service, worker) = build_network(handler);
@@ -36,6 +38,6 @@ async fn basic_test() {
         service.broadcast_msg(msg.clone()).await.unwrap();
         std::thread::sleep(std::time::Duration::from_secs(1));
 
-        assert_eq!(RECEIVED_MSG.pop(), Some(msg));
+        assert_eq!(BROADCASTED_MSG.pop(), Some(msg));
     }
 }

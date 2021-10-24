@@ -1,4 +1,5 @@
-use crate::behaviour::Behaviour;
+use super::behaviour::Behaviour;
+use crate::NetworkHandlerTrait;
 use libp2p::{
     floodsub::{self, Floodsub},
     identity,
@@ -7,24 +8,17 @@ use libp2p::{
 };
 use std::error::Error;
 
-pub type NetworkHandler<MsgHandlerF> = Swarm<Behaviour<MsgHandlerF>>;
+pub type NetworkHandler = Swarm<Behaviour>;
 
-impl<MsgHandlerF> crate::NetworkHandlerTrait for NetworkHandler<MsgHandlerF>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
-{
+impl NetworkHandlerTrait for NetworkHandler {
     fn broadcast_msg(&mut self, msg: Vec<u8>) {
         self.behaviour_mut().broadcast_msg(msg);
     }
+
+    fn receive_msg(&mut self, _: Vec<u8>) {}
 }
 
-pub fn build_handler<MsgHandlerF>(
-    topic_name: String,
-    msg_handler: MsgHandlerF,
-) -> Result<NetworkHandler<MsgHandlerF>, Box<dyn Error>>
-where
-    MsgHandlerF: 'static + FnMut(Vec<u8>) + Send,
-{
+pub fn build_handler(topic_name: String) -> Result<NetworkHandler, Box<dyn Error>> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from_public_key(local_key.public());
     println!("Local peer id: {:?}", local_peer_id);
@@ -51,7 +45,7 @@ where
 
     let mdns = async_std::task::block_on(Mdns::new(Default::default()))?;
 
-    let behaviour = Behaviour::new(floodsub, mdns, floodsub_topic, msg_handler);
+    let behaviour = Behaviour::new(floodsub, mdns, floodsub_topic);
 
     let mut handler = Swarm::new(transport, behaviour, local_peer_id);
     handler.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
